@@ -7,8 +7,6 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.core.permissions import IsEmployer, IsJobSeeker
-
 from .serializers import (
     JobTrackTokenObtainPairSerializer,
     RegisterSerializer,
@@ -130,30 +128,3 @@ class MeView(APIView):
 
     def get(self, request):
         return Response({"user": UserSerializer(request.user).data})
-
-
-class SeekerOnlyPingView(APIView):
-    """
-    GET /api/auth/ping/seeker/
-
-    Not a product feature. This exists so Phase 2 can actually *prove*
-    role-based access control works, with a test that a seeker gets 200 and
-    an employer gets 403. It is removed once real role-gated endpoints
-    exist in Phase 3.
-    """
-
-    permission_classes = [IsAuthenticated, IsJobSeeker]
-
-    def get(self, request):
-        return Response({"detail": "Hello, job seeker."})
-
-
-class EmployerOnlyPingView(APIView):
-    """
-    GET /api/auth/ping/employer/  -- see SeekerOnlyPingView. Temporary.
-    """
-
-    permission_classes = [IsAuthenticated, IsEmployer]
-
-    def get(self, request):
-        return Response({"detail": "Hello, employer."})

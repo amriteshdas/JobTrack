@@ -8,8 +8,6 @@ LOGIN_URL = "/api/auth/login/"
 REFRESH_URL = "/api/auth/refresh/"
 LOGOUT_URL = "/api/auth/logout/"
 ME_URL = "/api/auth/me/"
-SEEKER_PING_URL = "/api/auth/ping/seeker/"
-EMPLOYER_PING_URL = "/api/auth/ping/employer/"
 
 
 # ---------------------------------------------------------------------------
@@ -260,55 +258,3 @@ def test_logout_without_refresh_token_returns_400(auth_client, seeker):
     client = auth_client(seeker)
     response = client.post(LOGOUT_URL, {}, format="json")
     assert response.status_code == 400
-
-
-# ---------------------------------------------------------------------------
-# Role-based access control -- the heart of Phase 2
-# ---------------------------------------------------------------------------
-
-@pytest.mark.django_db
-def test_seeker_can_access_seeker_endpoint(auth_client, seeker):
-    client = auth_client(seeker)
-    assert client.get(SEEKER_PING_URL).status_code == 200
-
-
-@pytest.mark.django_db
-def test_employer_cannot_access_seeker_endpoint(auth_client, employer):
-    """403, not 401: the caller IS authenticated, they are just not allowed."""
-    client = auth_client(employer)
-    assert client.get(SEEKER_PING_URL).status_code == 403
-
-
-@pytest.mark.django_db
-def test_employer_can_access_employer_endpoint(auth_client, employer):
-    client = auth_client(employer)
-    assert client.get(EMPLOYER_PING_URL).status_code == 200
-
-
-@pytest.mark.django_db
-def test_seeker_cannot_access_employer_endpoint(auth_client, seeker):
-    client = auth_client(seeker)
-    assert client.get(EMPLOYER_PING_URL).status_code == 403
-
-
-@pytest.mark.django_db
-def test_anonymous_cannot_access_role_endpoints(api_client):
-    assert api_client.get(SEEKER_PING_URL).status_code == 401
-    assert api_client.get(EMPLOYER_PING_URL).status_code == 401
-
-
-@pytest.mark.django_db
-def test_role_cannot_be_escalated_by_forging_a_token_claim(api_client, seeker):
-    """
-    The key security property of Phase 2: authorization reads the DATABASE
-    role, not the JWT's role claim. Here we mint a token whose claim says
-    'employer' for a user who is actually a seeker, and confirm the
-    employer-only endpoint still refuses.
-    """
-    from rest_framework_simplejwt.tokens import RefreshToken
-
-    token = RefreshToken.for_user(seeker)
-    token["role"] = "employer"  # a lie, correctly signed
-
-    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.access_token}")
-    assert api_client.get(EMPLOYER_PING_URL).status_code == 403

@@ -2,12 +2,10 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
-    EmployerOnlyPingView,
     LoginView,
     LogoutView,
     MeView,
     RegisterView,
-    SeekerOnlyPingView,
 )
 
 app_name = "users"
@@ -22,7 +20,4 @@ urlpatterns = [
     path("refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("me/", MeView.as_view(), name="me"),
-    # Temporary RBAC proof endpoints -- removed in Phase 3.
-    path("ping/seeker/", SeekerOnlyPingView.as_view(), name="ping-seeker"),
-    path("ping/employer/", EmployerOnlyPingView.as_view(), name="ping-employer"),
 ]

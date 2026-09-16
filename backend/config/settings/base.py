@@ -47,6 +47,10 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
+    # Stores refresh tokens that have been rotated or explicitly logged out.
+    # Without this app, "logout" is purely client-side: a stolen refresh token
+    # would remain valid until it expired on its own.
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
 ]
 

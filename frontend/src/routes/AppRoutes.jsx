@@ -1,19 +1,38 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "../pages/public/Home";
 
-/**
- * Route definitions live in their own file, separate from App.jsx, so that
- * as the app grows into public/seeker/employer route groups (Phase 4+),
- * this file — not App.jsx — is what changes. App.jsx stays a thin shell
- * (providers, layout) for the whole project's life.
- *
- * Only one route exists right now on purpose: Phase 1 proves the wiring
- * works, it doesn't build the marketplace.
- */
+import Home from "../pages/public/Home";
+import Login from "../pages/public/Login";
+import Register from "../pages/public/Register";
+import SeekerDashboard from "../pages/seeker/SeekerDashboard";
+import EmployerDashboard from "../pages/employer/EmployerDashboard";
+import ProtectedRoute from "./ProtectedRoute";
+
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* Public */}
       <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      {/* Role-gated. The `role` prop is UX only -- the backend enforces
+          the same rule independently on every API call. */}
+      <Route
+        path="/seeker"
+        element={
+          <ProtectedRoute role="seeker">
+            <SeekerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/employer"
+        element={
+          <ProtectedRoute role="employer">
+            <EmployerDashboard />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

@@ -15,15 +15,12 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 from apps.core.views import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Temporary Phase 1 endpoint only, to prove the API/DB/DRF stack works.
-    # Real domain routes (auth/, jobs/, applications/, ...) are added
-    # incrementally starting in Phase 2, each wired via its own app's urls.py
-    # and included here as apps get built out.
     path('api/health/', health_check, name='health-check'),
+    path('api/auth/', include('apps.users.urls')),
 ]

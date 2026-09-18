@@ -3,14 +3,14 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import { formatEmploymentType, formatSalary, formatWorkMode, timeAgo } from "../../utils/format";
 import { jobsService } from "../../services/jobs";
+import { savedJobsService } from "../../services/profile";
 import { useAuth } from "../../context/AuthContext";
 
 /**
- * Apply / Save actions are rendered but disabled with a note -- the
- * Application model doesn't exist until Phase 6, and Saved Jobs is Phase 5.
- * Showing the buttons now (rather than omitting them) is deliberate: it
- * keeps the page layout stable across phases instead of components
- * appearing and shifting things around later.
+ * Apply is rendered but disabled with a note -- Application doesn't exist
+ * until Phase 6. Save/unsave is real, as of Phase 5. Keeping Apply visible
+ * (rather than omitting it) keeps the page layout stable across phases
+ * instead of a button appearing and shifting things around later.
  */
 export default function JobDetails() {
   const { id } = useParams();
@@ -19,6 +19,8 @@ export default function JobDetails() {
 
   const [job, setJob] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | ok | not_found | error
+  const [saved, setSaved] = useState(false);
+  const [savePending, setSavePending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +43,36 @@ export default function JobDetails() {
       cancelled = true;
     };
   }, [id]);
+
+  // Separate effect: only fetch the saved-jobs list once we know both who
+  // the user is AND which job we're looking at. Bundling this into the job
+  // effect above would refire the saved-list request every time the job
+  // itself reloads, which is unnecessary.
+  useEffect(() => {
+    if (!isAuthenticated || !isJobSeeker) return;
+    let cancelled = false;
+    savedJobsService.list().then((entries) => {
+      if (!cancelled) setSaved(entries.some((e) => String(e.job.id) === String(id)));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, isAuthenticated, isJobSeeker]);
+
+  const toggleSave = async () => {
+    setSavePending(true);
+    try {
+      if (saved) {
+        await savedJobsService.unsave(id);
+        setSaved(false);
+      } else {
+        await savedJobsService.save(id);
+        setSaved(true);
+      }
+    } finally {
+      setSavePending(false);
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -121,11 +153,15 @@ export default function JobDetails() {
                 Apply
               </button>
               <button
-                disabled
-                title="Saved jobs are implemented in Phase 5"
-                className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium opacity-50 cursor-not-allowed"
+                onClick={toggleSave}
+                disabled={savePending}
+                className={`rounded-lg border px-5 py-2.5 text-sm font-medium transition disabled:opacity-50 ${
+                  saved
+                    ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
+                    : "border-slate-300 text-slate-700 hover:bg-slate-50"
+                }`}
               >
-                Save job
+                {saved ? "Saved ✓" : "Save job"}
               </button>
             </>
           )}

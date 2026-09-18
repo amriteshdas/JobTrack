@@ -6,6 +6,8 @@ import Register from "../pages/public/Register";
 import JobDetails from "../pages/public/JobDetails";
 import CompanyProfile from "../pages/public/CompanyProfile";
 import SeekerDashboard from "../pages/seeker/SeekerDashboard";
+import SeekerProfile from "../pages/seeker/SeekerProfile";
+import SavedJobs from "../pages/seeker/SavedJobs";
 import EmployerDashboard from "../pages/employer/EmployerDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -26,6 +28,22 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute role="seeker">
             <SeekerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/seeker/profile"
+        element={
+          <ProtectedRoute role="seeker">
+            <SeekerProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/seeker/saved-jobs"
+        element={
+          <ProtectedRoute role="seeker">
+            <SavedJobs />
           </ProtectedRoute>
         }
       />

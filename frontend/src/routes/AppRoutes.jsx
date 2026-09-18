@@ -3,6 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import Home from "../pages/public/Home";
 import Login from "../pages/public/Login";
 import Register from "../pages/public/Register";
+import JobDetails from "../pages/public/JobDetails";
+import CompanyProfile from "../pages/public/CompanyProfile";
 import SeekerDashboard from "../pages/seeker/SeekerDashboard";
 import EmployerDashboard from "../pages/employer/EmployerDashboard";
 import ProtectedRoute from "./ProtectedRoute";
@@ -10,8 +12,10 @@ import ProtectedRoute from "./ProtectedRoute";
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public */}
+      {/* Public marketplace */}
       <Route path="/" element={<Home />} />
+      <Route path="/jobs/:id" element={<JobDetails />} />
+      <Route path="/companies/:slug" element={<CompanyProfile />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 

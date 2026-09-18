@@ -1,23 +1,46 @@
 from django.utils import timezone
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.core.permissions import IsCompanyMember, IsEmployer
 
+from .filters import JobFilter
 from .models import Job
 from .serializers import JobSerializer, JobWriteSerializer
 
 
 class JobViewSet(viewsets.ModelViewSet):
     """
-    Job CRUD.
+    Job CRUD plus the public search/filter/sort/paginate surface.
 
-    Search, filtering and sorting are deliberately NOT here -- that is
-    Phase 4. This phase covers create/edit/delete/publish and the ownership
-    rules around them.
+    Everything under `GET /api/jobs/?...` is ONE endpoint. Query params
+    compose freely:
+        ?search=python&location=Kolkata&work_mode=remote&ordering=-salary_min
+    which is exactly the "design cleanly rather than separate endpoints for
+    every filter" requirement from Phase 0, and is what django-filter,
+    SearchFilter and OrderingFilter give us together for almost no code.
     """
+
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = JobFilter
+
+    # SearchFilter does a case-insensitive LIKE '%term%' across these fields
+    # -- it is NOT full-text search (no ranking, no stemming, no relevance
+    # score) and it cannot use a normal B-tree index efficiently on large
+    # text columns. That upgrade path (Postgres GIN + tsvector) is exactly
+    # what Phase 0 flagged as a Phase-9 optimization once real query volume
+    # justifies it. For MVP scale this is the right amount of engineering.
+    search_fields = ["title", "description", "location", "company__name"]
+
+    # Whitelisted explicitly -- OrderingFilter with no `ordering_fields` will
+    # accept ANY model field name, including ones on related tables reachable
+    # through '__', which is both a surprising API surface and a way for a
+    # client to force an expensive, unindexed sort.
+    ordering_fields = ["created_at", "published_at", "salary_min", "experience_required"]
+    ordering = ["-published_at"]  # default: newest first
 
     def get_serializer_class(self):
         return JobWriteSerializer if self.action in (

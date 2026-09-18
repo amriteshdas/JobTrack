@@ -47,11 +47,9 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
-    # Stores refresh tokens that have been rotated or explicitly logged out.
-    # Without this app, "logout" is purely client-side: a stolen refresh token
-    # would remain valid until it expired on its own.
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
+    "django_filters",
 ]
 
 # Every app lives under apps.<name> per the Phase 0 app structure.
@@ -161,9 +159,11 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
-    # Search/filter backends (django-filter, SearchFilter, OrderingFilter) are
-    # deliberately left out of Phase 1 — they belong to Phase 4 (job search),
-    # once there's an actual model/queryset to filter.
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ),
 }
 
 SIMPLE_JWT = {

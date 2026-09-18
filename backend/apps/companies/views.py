@@ -1,5 +1,6 @@
 from django.db.models import Count, Q
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -28,6 +29,11 @@ class CompanyViewSet(viewsets.ModelViewSet):
     serializer_class = CompanySerializer
     lookup_field = "slug"
 
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["industry", "company_size", "location"]
+    search_fields = ["name", "description"]
+    ordering_fields = ["name", "founded_year"]
+
     def get_queryset(self):
         # annotate() computes the open-jobs count in the same SQL query.
         # Without it, serializing N companies would fire N extra COUNT
@@ -43,7 +49,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         ).order_by("name", "id")
 
     def get_permissions(self):
-        if self.action in ("list", "retrieve"):
+        if self.action in ("list", "retrieve", "jobs"):
             return [AllowAny()]
         if self.action == "create":
             return [IsAuthenticated(), IsEmployer()]
@@ -62,6 +68,32 @@ class CompanyViewSet(viewsets.ModelViewSet):
             employer_profile=profile,
             membership_role=CompanyMembership.MembershipRole.OWNER,
         )
+
+    @action(detail=True, methods=["get"])
+    def jobs(self, request, slug=None):
+        """
+        GET /api/companies/{slug}/jobs/ -- the company's published jobs.
+
+        A separate action rather than nesting jobs inside CompanySerializer:
+        the company detail page and the company's job list are fetched at
+        different times and cached differently in a real frontend, and a
+        company with hundreds of postings would otherwise bloat every
+        single company detail response whether or not the client wants the
+        job list right now.
+        """
+        company = self.get_object()
+        jobs = (
+            Job.objects.select_related("company")
+            .prefetch_related("skills")
+            .filter(company=company, status=Job.Status.PUBLISHED)
+            .order_by("-published_at")
+        )
+        from apps.jobs.serializers import JobSerializer
+
+        page = self.paginate_queryset(jobs)
+        if page is not None:
+            return self.get_paginated_response(JobSerializer(page, many=True).data)
+        return Response(JobSerializer(jobs, many=True).data)
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated, IsEmployer])
     def mine(self, request):

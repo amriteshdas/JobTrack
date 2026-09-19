@@ -8,7 +8,9 @@ import CompanyProfile from "../pages/public/CompanyProfile";
 import SeekerDashboard from "../pages/seeker/SeekerDashboard";
 import SeekerProfile from "../pages/seeker/SeekerProfile";
 import SavedJobs from "../pages/seeker/SavedJobs";
+import MyApplications from "../pages/seeker/MyApplications";
 import EmployerDashboard from "../pages/employer/EmployerDashboard";
+import JobApplicants from "../pages/employer/JobApplicants";
 import ProtectedRoute from "./ProtectedRoute";
 
 export default function AppRoutes() {
@@ -48,10 +50,26 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/seeker/applications"
+        element={
+          <ProtectedRoute role="seeker">
+            <MyApplications />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/employer"
         element={
           <ProtectedRoute role="employer">
             <EmployerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/employer/jobs/:jobId/applicants"
+        element={
+          <ProtectedRoute role="employer">
+            <JobApplicants />
           </ProtectedRoute>
         }
       />

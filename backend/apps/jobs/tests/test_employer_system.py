@@ -328,6 +328,25 @@ def test_published_job_is_public(api_client, published_job):
     assert api_client.get(f"{JOBS}{published_job.id}/").status_code == 200
 
 
+@pytest.mark.django_db
+def test_closed_job_remains_publicly_viewable(auth, employer_a, published_job):
+    """
+    Fixed during Phase 6: a CLOSED job was publicly known while it was
+    published (someone may have bookmarked or applied to it), so unlike a
+    DRAFT it stays visible -- `is_open` communicates "can't apply anymore",
+    not a 404. Only DRAFT is private to the owning company.
+    """
+    client = auth(employer_a)
+    client.post(f"{JOBS}{published_job.id}/close/")
+
+    from rest_framework.test import APIClient
+    outsider = APIClient()
+    r = outsider.get(f"{JOBS}{published_job.id}/")
+    assert r.status_code == 200
+    assert r.data["status"] == "closed"
+    assert r.data["is_open"] is False
+
+
 # ---------------------------------------------------------------------------
 # Publish / unpublish / close
 # ---------------------------------------------------------------------------

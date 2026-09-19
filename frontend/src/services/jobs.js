@@ -27,6 +27,11 @@ export const jobsService = {
     const { data } = await api.get(`/jobs/${id}/`);
     return data;
   },
+
+  async mine() {
+    const { data } = await api.get("/jobs/mine/");
+    return data;
+  },
 };
 
 export const companiesService = {

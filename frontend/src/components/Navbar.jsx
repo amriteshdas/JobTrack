@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import NotificationsBell from "./NotificationsBell";
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -20,6 +21,7 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
+              <NotificationsBell />
               <button onClick={logout} className="text-slate-600 hover:text-slate-900">
                 Log out
               </button>

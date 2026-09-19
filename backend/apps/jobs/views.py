@@ -68,12 +68,17 @@ class JobViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         """
-        A draft or closed job is visible only to its own company's members.
-        Anyone else gets 404, not 403 -- revealing that a hidden job exists
-        at a given id is itself an information leak.
+        A DRAFT job is visible only to its own company's members -- it was
+        never announced, so outsiders should not be able to confirm it
+        exists. A CLOSED job, by contrast, WAS published at some point
+        (someone may have bookmarked or applied to it) and stays publicly
+        visible; `is_open` is what tells the frontend to grey out Apply,
+        not a 404. Phase 6 surfaced this distinction: applying to a closed
+        job needs a real "this job isn't accepting applications anymore"
+        400, which is only reachable if the job itself is still visible.
         """
         job = self.get_object()
-        if job.status != Job.Status.PUBLISHED and not self._user_can_manage(request.user, job):
+        if job.status == Job.Status.DRAFT and not self._user_can_manage(request.user, job):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         return Response(self.get_serializer(job).data)
 

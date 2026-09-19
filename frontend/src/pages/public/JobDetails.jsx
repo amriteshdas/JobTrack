@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+import ApplyModal from "../../components/ApplyModal";
 import { formatEmploymentType, formatSalary, formatWorkMode, timeAgo } from "../../utils/format";
 import { jobsService } from "../../services/jobs";
 import { savedJobsService } from "../../services/profile";
+import { applicationsService } from "../../services/applications";
 import { useAuth } from "../../context/AuthContext";
 
 /**
- * Apply is rendered but disabled with a note -- Application doesn't exist
- * until Phase 6. Save/unsave is real, as of Phase 5. Keeping Apply visible
- * (rather than omitting it) keeps the page layout stable across phases
- * instead of a button appearing and shifting things around later.
+ * Apply is now real, as of Phase 6 -- it opens ApplyModal, which submits a
+ * resume + optional cover letter to POST /jobs/{id}/apply/. Save/unsave has
+ * been real since Phase 5.
  */
 export default function JobDetails() {
   const { id } = useParams();
@@ -21,6 +22,8 @@ export default function JobDetails() {
   const [status, setStatus] = useState("loading"); // loading | ok | not_found | error
   const [saved, setSaved] = useState(false);
   const [savePending, setSavePending] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [applied, setApplied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +56,20 @@ export default function JobDetails() {
     let cancelled = false;
     savedJobsService.list().then((entries) => {
       if (!cancelled) setSaved(entries.some((e) => String(e.job.id) === String(id)));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, isAuthenticated, isJobSeeker]);
+
+  // Separate effect, same reasoning as the saved-status one above: only
+  // fires once we know who the user is, and doesn't refire when the job
+  // itself reloads.
+  useEffect(() => {
+    if (!isAuthenticated || !isJobSeeker) return;
+    let cancelled = false;
+    applicationsService.mine().then((apps) => {
+      if (!cancelled) setApplied(apps.some((a) => String(a.job.id) === String(id) && a.status !== "withdrawn"));
     });
     return () => {
       cancelled = true;
@@ -145,13 +162,20 @@ export default function JobDetails() {
           )}
           {isAuthenticated && isJobSeeker && (
             <>
-              <button
-                disabled
-                title="Applications are implemented in Phase 6"
-                className="rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium opacity-50 cursor-not-allowed"
-              >
-                Apply
-              </button>
+              {applied ? (
+                <span className="rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 px-5 py-2.5 text-sm font-medium">
+                  Applied ✓
+                </span>
+              ) : (
+                <button
+                  onClick={() => setShowApplyModal(true)}
+                  disabled={!job.is_open}
+                  title={!job.is_open ? "This job is no longer accepting applications" : undefined}
+                  className="rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Apply
+                </button>
+              )}
               <button
                 onClick={toggleSave}
                 disabled={savePending}
@@ -199,6 +223,17 @@ export default function JobDetails() {
           </p>
         )}
       </div>
+
+      {showApplyModal && (
+        <ApplyModal
+          jobId={id}
+          onClose={() => setShowApplyModal(false)}
+          onApplied={() => {
+            setShowApplyModal(false);
+            setApplied(true);
+          }}
+        />
+      )}
     </Shell>
   );
 }

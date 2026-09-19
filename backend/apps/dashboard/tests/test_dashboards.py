@@ -243,3 +243,84 @@ def test_recently_posted_jobs_ordered_newest_first(auth, employer, company):
     r = auth(employer).get(EMPLOYER_DASH)
     titles = [j["title"] for j in r.data["recently_posted_jobs"]]
     assert titles[0] == "Newer"
+
+
+# ---------------------------------------------------------------------------
+# Interview data (Phase 8) flowing into the dashboards
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_seeker_dashboard_shows_upcoming_interview(auth, seeker, employer, company, resume_file):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    job = make_job(company, employer, title="Backend Engineer")
+    created = apply(auth(seeker), job.id, resume_file).data
+
+    auth(employer).post(
+        f"/api/applications/{created['id']}/interviews/",
+        {
+            "interview_type": "video",
+            "scheduled_at": (timezone.now() + timedelta(days=2)).isoformat(),
+            "meeting_link": "https://meet.example.com/x",
+        },
+        format="json",
+    )
+
+    r = auth(seeker).get(SEEKER_DASH)
+    assert len(r.data["upcoming_interviews"]) == 1
+    assert r.data["upcoming_interviews"][0]["job_title"] == "Backend Engineer"
+    # Scheduling also advances application status -- the stat should reflect it.
+    assert r.data["stats"]["interview"] == 1
+
+
+@pytest.mark.django_db
+def test_seeker_dashboard_excludes_cancelled_interviews(
+    auth, seeker, employer, company, resume_file
+):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    job = make_job(company, employer)
+    created = apply(auth(seeker), job.id, resume_file).data
+    interview = auth(employer).post(
+        f"/api/applications/{created['id']}/interviews/",
+        {
+            "interview_type": "phone",
+            "scheduled_at": (timezone.now() + timedelta(days=2)).isoformat(),
+            "meeting_link": "https://meet.example.com/x",
+        },
+        format="json",
+    ).data
+    auth(employer).patch(
+        f"/api/interviews/{interview['id']}/", {"status": "cancelled"}, format="json"
+    )
+
+    r = auth(seeker).get(SEEKER_DASH)
+    assert r.data["upcoming_interviews"] == []
+
+
+@pytest.mark.django_db
+def test_employer_dashboard_counts_scheduled_interviews(
+    auth, seeker, employer, company, resume_file
+):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    job = make_job(company, employer)
+    created = apply(auth(seeker), job.id, resume_file).data
+    auth(employer).post(
+        f"/api/applications/{created['id']}/interviews/",
+        {
+            "interview_type": "onsite",
+            "scheduled_at": (timezone.now() + timedelta(days=2)).isoformat(),
+            "location": "HQ",
+        },
+        format="json",
+    )
+
+    r = auth(employer).get(EMPLOYER_DASH)
+    assert r.data["stats"]["interviews_scheduled"] == 1

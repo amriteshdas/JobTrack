@@ -97,13 +97,40 @@ export default function SeekerDashboard() {
                 <h2 className="text-sm font-semibold text-slate-900 mb-3 mt-6">
                   Upcoming interviews
                 </h2>
-                <p className="text-sm text-slate-400">
-                  {/* Interview scheduling arrives in Phase 8; the dashboard
-                      already renders this section against the real shape
-                      the backend will return, so this becomes a data-only
-                      change later. */}
-                  Interview scheduling is coming in Phase 8.
-                </p>
+                {data.upcoming_interviews.length === 0 ? (
+                  <p className="text-sm text-slate-400">No interviews scheduled right now.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {data.upcoming_interviews.map((iv) => (
+                      <div
+                        key={iv.id}
+                        className="bg-white border border-slate-200 rounded-lg px-3 py-2.5"
+                      >
+                        <p className="text-sm font-medium text-slate-900">{iv.job_title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {iv.company_name} · {new Date(iv.scheduled_at).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5 capitalize">
+                          {iv.interview_type}
+                          {iv.meeting_link && (
+                            <>
+                              {" · "}
+                              <a
+                                href={iv.meeting_link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-slate-600 hover:underline"
+                              >
+                                Join link
+                              </a>
+                            </>
+                          )}
+                          {iv.location && ` · ${iv.location}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
 
               <section>

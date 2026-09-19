@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../../components/Navbar";
+import ScheduleInterviewModal from "../../components/ScheduleInterviewModal";
 import { applicationsService } from "../../services/applications";
 import { timeAgo } from "../../utils/format";
 
@@ -29,6 +30,7 @@ export default function JobApplicants() {
   const { jobId } = useParams();
   const [applications, setApplications] = useState(null);
   const [error, setError] = useState(null);
+  const [schedulingFor, setSchedulingFor] = useState(null);
 
   const load = () =>
     applicationsService
@@ -102,6 +104,15 @@ export default function JobApplicants() {
                   View resume
                 </a>
 
+                {app.status !== "withdrawn" && (
+                  <button
+                    onClick={() => setSchedulingFor(app.id)}
+                    className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
+                  >
+                    Schedule interview
+                  </button>
+                )}
+
                 {app.status === "withdrawn" ? (
                   <span className="text-xs text-slate-400 ml-auto">Withdrawn by candidate</span>
                 ) : (
@@ -125,6 +136,17 @@ export default function JobApplicants() {
           ))}
         </div>
       </main>
+
+      {schedulingFor && (
+        <ScheduleInterviewModal
+          applicationId={schedulingFor}
+          onClose={() => setSchedulingFor(null)}
+          onScheduled={() => {
+            setSchedulingFor(null);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -9,6 +9,8 @@ from rest_framework.views import APIView
 
 from apps.applications.models import Application, SavedJob
 from apps.core.permissions import IsEmployer, IsJobSeeker
+from apps.interviews.models import Interview
+from apps.interviews.serializers import InterviewSerializer
 from apps.jobs.models import Job
 from apps.jobs.serializers import JobSerializer
 
@@ -53,6 +55,16 @@ class SeekerDashboardView(APIView):
 
         recommended_jobs = self._recommended_jobs(user)
 
+        upcoming_interviews = (
+            Interview.objects.filter(
+                application__applicant=user,
+                status=Interview.Status.SCHEDULED,
+                scheduled_at__gte=timezone.now(),
+            )
+            .select_related("application__job__company", "application__applicant")
+            .order_by("scheduled_at")[:5]
+        )
+
         return Response(
             {
                 "stats": {
@@ -67,12 +79,9 @@ class SeekerDashboardView(APIView):
                 "recommended_jobs": JobSerializer(
                     recommended_jobs, many=True, context={"request": request}
                 ).data,
-                # Interviews arrive in Phase 8. Surfaced as an explicit empty
-                # list now (not omitted) so the frontend's "Upcoming
-                # interviews" section already has the right shape to render
-                # against once that model exists -- adding real data later
-                # is then a backend-only change.
-                "upcoming_interviews": [],
+                "upcoming_interviews": InterviewSerializer(
+                    upcoming_interviews, many=True, context={"request": request}
+                ).data,
             }
         )
 
@@ -150,6 +159,10 @@ class EmployerDashboardView(APIView):
             .order_by("day")
         )
 
+        interviews_scheduled = Interview.objects.filter(
+            application__job__in=jobs, status=Interview.Status.SCHEDULED
+        ).count()
+
         return Response(
             {
                 "stats": {
@@ -157,9 +170,7 @@ class EmployerDashboardView(APIView):
                     "active_jobs": jobs.filter(status=Job.Status.PUBLISHED).count(),
                     "applications_received": applications.count(),
                     "shortlisted": status_counts.get(Application.Status.SHORTLISTED, 0),
-                    # Interviews arrive in Phase 8; see SeekerDashboardView's
-                    # note on the same tradeoff.
-                    "interviews_scheduled": 0,
+                    "interviews_scheduled": interviews_scheduled,
                 },
                 "recently_posted_jobs": JobSerializer(
                     recent_jobs, many=True, context={"request": request}

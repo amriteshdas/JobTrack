@@ -1,68 +1,168 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+  LineChart, Line, CartesianGrid,
+} from "recharts";
+import Navbar from "../../components/Navbar";
+import StatCard from "../../components/StatCard";
 import { useAuth } from "../../context/AuthContext";
-import { jobsService } from "../../services/jobs";
+import { dashboardService } from "../../services/dashboard";
 import { formatEmploymentType, formatWorkMode } from "../../utils/format";
 
-// Still a placeholder for the real analytics dashboard (Phase 7: applicant
-// counts, funnel stats). What's real as of Phase 6: the job list and the
-// link through to each job's applicants.
+const STATUS_COLORS = {
+  applied: "#94a3b8",
+  under_review: "#60a5fa",
+  shortlisted: "#fbbf24",
+  interview: "#a78bfa",
+  selected: "#34d399",
+  rejected: "#f87171",
+  withdrawn: "#cbd5e1",
+};
+
 export default function EmployerDashboard() {
-  const { user, logout } = useAuth();
-  const [jobs, setJobs] = useState(null);
+  const { user } = useAuth();
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    jobsService.mine().then(setJobs);
+    dashboardService.employer().then(setData);
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl p-6">
-        <p className="text-xs uppercase tracking-wide text-slate-400">Employer</p>
-        <h1 className="mt-1 text-xl font-semibold text-slate-900">
-          Welcome, {user.full_name || user.email}
-        </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Full analytics arrive in Phase 7. For now, your postings:
-        </p>
-
-        <div className="mt-4 space-y-2">
-          {jobs === null && <p className="text-sm text-slate-400">Loading…</p>}
-          {jobs?.length === 0 && (
-            <p className="text-sm text-slate-400">
-              No jobs posted yet. Job creation UI lands with Phase 7's dashboard build-out --
-              for now, jobs can be created via the API directly.
-            </p>
-          )}
-          {jobs?.map((job) => (
-            <div
-              key={job.id}
-              className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2.5"
-            >
-              <div>
-                <p className="text-sm font-medium text-slate-900">{job.title}</p>
-                <p className="text-xs text-slate-400">
-                  {formatWorkMode(job.work_mode)} · {formatEmploymentType(job.employment_type)} ·{" "}
-                  <span className="capitalize">{job.status}</span>
-                </p>
-              </div>
-              <Link
-                to={`/employer/jobs/${job.id}/applicants`}
-                className="text-sm text-slate-900 font-medium hover:underline"
-              >
-                Applicants
-              </Link>
-            </div>
-          ))}
+    <div className="min-h-screen bg-slate-50">
+      <Navbar />
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <div className="mb-6">
+          <p className="text-xs uppercase tracking-wide text-slate-400">Employer</p>
+          <h1 className="text-xl font-semibold text-slate-900">
+            Welcome, {user.full_name || user.email}
+          </h1>
         </div>
 
-        <button
-          onClick={logout}
-          className="mt-5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Log out
-        </button>
-      </div>
+        {!data ? (
+          <p className="text-sm text-slate-400">Loading…</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <StatCard label="Total jobs" value={data.stats.total_jobs} />
+              <StatCard label="Active jobs" value={data.stats.active_jobs} />
+              <StatCard label="Applications received" value={data.stats.applications_received} />
+              <StatCard label="Shortlisted" value={data.stats.shortlisted} />
+              <StatCard label="Interviews" value={data.stats.interviews_scheduled} />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mt-8">
+              <ChartCard title="Applications per job">
+                {data.charts.applications_per_job.length === 0 ? (
+                  <EmptyChart />
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={data.charts.applications_per_job} layout="vertical" margin={{ left: 24 }}>
+                      <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                      <YAxis
+                        type="category"
+                        dataKey="title"
+                        width={120}
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(t) => (t.length > 16 ? `${t.slice(0, 16)}…` : t)}
+                      />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#0f172a" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+
+              <ChartCard title="Application status distribution">
+                {data.charts.status_distribution.length === 0 ? (
+                  <EmptyChart />
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={data.charts.status_distribution}
+                        dataKey="count"
+                        nameKey="status"
+                        outerRadius={80}
+                        label={({ status, count }) => `${status.replace("_", " ")}: ${count}`}
+                      >
+                        {data.charts.status_distribution.map((entry) => (
+                          <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || "#94a3b8"} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+
+              <ChartCard title="Applications over time (last 30 days)" full>
+                {data.charts.applications_over_time.length === 0 ? (
+                  <EmptyChart />
+                ) : (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={data.charts.applications_over_time}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="count" stroke="#0f172a" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </ChartCard>
+            </div>
+
+            <h2 className="text-sm font-semibold text-slate-900 mt-8 mb-3">Recently posted jobs</h2>
+            <div className="space-y-2">
+              {data.recently_posted_jobs.length === 0 && (
+                <p className="text-sm text-slate-400">
+                  No jobs posted yet. Job creation UI lands with a future phase -- for now, jobs
+                  can be created via the API directly.
+                </p>
+              )}
+              {data.recently_posted_jobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2.5"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{job.title}</p>
+                    <p className="text-xs text-slate-400">
+                      {formatWorkMode(job.work_mode)} · {formatEmploymentType(job.employment_type)} ·{" "}
+                      <span className="capitalize">{job.status}</span>
+                    </p>
+                  </div>
+                  <Link
+                    to={`/employer/jobs/${job.id}/applicants`}
+                    className="text-sm text-slate-900 font-medium hover:underline"
+                  >
+                    Applicants
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function ChartCard({ title, full, children }) {
+  return (
+    <div className={`bg-white border border-slate-200 rounded-xl p-4 ${full ? "md:col-span-2" : ""}`}>
+      <h3 className="text-sm font-semibold text-slate-900 mb-2">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function EmptyChart() {
+  return (
+    <div className="h-[220px] flex items-center justify-center text-sm text-slate-400">
+      No data yet.
     </div>
   );
 }

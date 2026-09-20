@@ -3,7 +3,12 @@ import api from "./api";
 export const applicationsService = {
   async apply(jobId, { resume, coverLetter }) {
     const form = new FormData();
-    form.append("resume", resume);
+    // `resume` is optional here -- omitting it entirely (not even an empty
+    // field) tells the backend to fall back to the seeker's profile resume.
+    // Appending an empty string would NOT do the same thing: DRF's
+    // FileField sees an empty value as "a blank file was submitted", not
+    // "no file was submitted", and rejects it.
+    if (resume) form.append("resume", resume);
     if (coverLetter) form.append("cover_letter", coverLetter);
     const { data } = await api.post(`/jobs/${jobId}/apply/`, form, {
       headers: { "Content-Type": "multipart/form-data" },

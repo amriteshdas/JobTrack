@@ -1,3 +1,6 @@
+import os
+
+from django.core.files.base import ContentFile
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +18,35 @@ from .serializers import (
     ApplicationStatusUpdateSerializer,
     SavedJobSerializer,
 )
+
+
+def _snapshot_profile_resume(user):
+    """
+    Copies the bytes of the seeker's profile resume into a new, independent
+    file for this specific application.
+
+    Deliberately a real byte-for-byte copy, not `Application.resume =
+    profile.resume.name` (which would just point two FileFields at the same
+    storage key). Pointing at the same file would mean a seeker replacing
+    their profile resume next month silently rewrites what every past
+    employer sees -- exactly the live-reference problem
+    Application.resume's own docstring already rejected for the "attach a
+    file yourself" path. The default-CV path has to honor the same rule.
+
+    Returns None if there is no profile resume to copy from.
+    """
+    profile = getattr(user, "jobseeker_profile", None)
+    if profile is None or not profile.resume:
+        return None
+
+    profile.resume.open("rb")
+    try:
+        content = profile.resume.read()
+    finally:
+        profile.resume.close()
+
+    filename = os.path.basename(profile.resume.name)
+    return ContentFile(content, name=filename)
 
 
 class SavedJobListView(APIView):
@@ -95,6 +127,7 @@ class ApplyToJobView(APIView):
       - job does not exist / is not published -> 404 (existence-leak prevention)
       - job's deadline has passed             -> 400
       - already applied                       -> 409
+      - no resume attached AND no profile resume to fall back to -> 400
     """
 
     permission_classes = [IsAuthenticated, IsJobSeeker]
@@ -123,8 +156,26 @@ class ApplyToJobView(APIView):
 
         serializer = ApplicationCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+
+        resume_file = serializer.validated_data.get("resume")
+        if not resume_file:
+            # No file attached to THIS request -- fall back to the seeker's
+            # profile resume, snapshotted (bytes copied into a brand-new
+            # file) rather than referenced live. Snapshotting matters here
+            # for exactly the reason documented on Application.resume since
+            # Phase 6: if the seeker updates their profile resume next
+            # month, every application already submitted must keep showing
+            # what the employer actually reviewed, not what the profile
+            # happens to hold today.
+            resume_file = _snapshot_profile_resume(request.user)
+            if resume_file is None:
+                return Response(
+                    {"resume": "Please attach a resume, or upload one to your profile first."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         # job/applicant come from the URL and the token -- never the body.
-        application = serializer.save(job=job, applicant=request.user)
+        application = serializer.save(job=job, applicant=request.user, resume=resume_file)
 
         notify(
             recipient=job.posted_by.user,
@@ -145,10 +196,21 @@ class MyApplicationsView(APIView):
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
     def get(self, request):
+        # select_related("applicant__jobseeker_profile") pre-existed as a
+        # gap even before ApplicantSerializer grew education/experience --
+        # every row here belongs to the SAME user, but without it Django
+        # still re-fetches applicant + profile per row rather than reusing
+        # the one already on request.user. Fixed alongside the new fields
+        # since both are now visible in the same serializer.
         qs = (
             Application.objects.filter(applicant=request.user)
-            .select_related("job__company", "job__posted_by__user")
-            .prefetch_related("job__skills")
+            .select_related("job__company", "job__posted_by__user", "applicant__jobseeker_profile")
+            .prefetch_related(
+                "job__skills",
+                "applicant__jobseeker_profile__skills",
+                "applicant__jobseeker_profile__education",
+                "applicant__jobseeker_profile__experience",
+            )
         )
         return Response(ApplicationSerializer(qs, many=True, context={"request": request}).data)
 
@@ -212,8 +274,26 @@ class JobApplicantsView(APIView):
 
         qs = (
             Application.objects.filter(job=job)
-            .select_related("applicant__jobseeker_profile")
-            .prefetch_related("applicant__jobseeker_profile__skills")
+            .select_related(
+                "applicant__jobseeker_profile",
+                # Pre-existing gap, found while adding the fields below:
+                # ApplicationSerializer always nests the FULL Job (company
+                # included) even though every row on THIS endpoint shares
+                # the exact same job. Without this, each row re-fetched
+                # job + company independently instead of reusing the one
+                # instance already known from the `job` variable above.
+                "job__company",
+                "job__posted_by__user",
+            )
+            .prefetch_related(
+                "job__skills",
+                "applicant__jobseeker_profile__skills",
+                # ApplicantSerializer now nests full education/experience
+                # history (see its docstring); without these, serializing
+                # N applicants would fire 2N extra queries.
+                "applicant__jobseeker_profile__education",
+                "applicant__jobseeker_profile__experience",
+            )
         )
         return Response(ApplicationSerializer(qs, many=True, context={"request": request}).data)
 

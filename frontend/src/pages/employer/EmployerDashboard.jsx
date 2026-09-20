@@ -24,9 +24,13 @@ const STATUS_COLORS = {
 export default function EmployerDashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    dashboardService.employer().then(setData);
+    dashboardService
+      .employer()
+      .then(setData)
+      .catch(() => setError("Could not load your dashboard. Please try refreshing."));
   }, []);
 
   return (
@@ -40,7 +44,9 @@ export default function EmployerDashboard() {
           </h1>
         </div>
 
-        {!data ? (
+        {error ? (
+          <p className="text-sm text-red-600">{error}</p>
+        ) : !data ? (
           <p className="text-sm text-slate-400">Loading…</p>
         ) : (
           <>

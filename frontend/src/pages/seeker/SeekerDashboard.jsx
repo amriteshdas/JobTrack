@@ -20,9 +20,13 @@ const STATUS_STYLES = {
 export default function SeekerDashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    dashboardService.seeker().then(setData);
+    dashboardService
+      .seeker()
+      .then(setData)
+      .catch(() => setError("Could not load your dashboard. Please try refreshing."));
   }, []);
 
   return (
@@ -51,7 +55,9 @@ export default function SeekerDashboard() {
           </div>
         </div>
 
-        {!data ? (
+        {error ? (
+          <p className="text-sm text-red-600">{error}</p>
+        ) : !data ? (
           <p className="text-sm text-slate-400">Loading…</p>
         ) : (
           <>

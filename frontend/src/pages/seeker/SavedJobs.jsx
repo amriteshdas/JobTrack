@@ -6,8 +6,10 @@ import { savedJobsService } from "../../services/profile";
 export default function SavedJobs() {
   const [saved, setSaved] = useState(null);
 
-  const load = () => savedJobsService.list().then(setSaved);
-  useEffect(load, []);
+  const load = () => savedJobsService.list().then(setSaved).catch(() => setSaved([]));
+  useEffect(() => {
+    load();
+  }, []);
 
   const unsave = async (jobId) => {
     await savedJobsService.unsave(jobId);

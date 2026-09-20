@@ -27,8 +27,10 @@ const STATUS_LABELS = {
 export default function MyApplications() {
   const [applications, setApplications] = useState(null);
 
-  const load = () => applicationsService.mine().then(setApplications);
-  useEffect(load, []);
+  const load = () => applicationsService.mine().then(setApplications).catch(() => setApplications([]));
+  useEffect(() => {
+    load();
+  }, []);
 
   const withdraw = async (id) => {
     if (!window.confirm("Withdraw this application? This can't be undone.")) return;

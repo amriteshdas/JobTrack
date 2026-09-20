@@ -7,7 +7,7 @@ export default function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  const load = () => notificationsService.list().then(setNotifications);
+  const load = () => notificationsService.list().then(setNotifications).catch(() => {});
 
   useEffect(() => {
     load();

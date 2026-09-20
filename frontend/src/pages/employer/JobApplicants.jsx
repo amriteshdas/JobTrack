@@ -38,7 +38,9 @@ export default function JobApplicants() {
       .then(setApplications)
       .catch(() => setError("Could not load applicants for this job."));
 
-  useEffect(load, [jobId]);
+  useEffect(() => {
+    load();
+  }, [jobId]);
 
   const changeStatus = async (appId, newStatus) => {
     try {

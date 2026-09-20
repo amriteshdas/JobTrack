@@ -54,9 +54,15 @@ export default function JobDetails() {
   useEffect(() => {
     if (!isAuthenticated || !isJobSeeker) return;
     let cancelled = false;
-    savedJobsService.list().then((entries) => {
-      if (!cancelled) setSaved(entries.some((e) => String(e.job.id) === String(id)));
-    });
+    savedJobsService
+      .list()
+      .then((entries) => {
+        if (!cancelled) setSaved(entries.some((e) => String(e.job.id) === String(id)));
+      })
+      .catch(() => {
+        /* Non-fatal: the Save button just falls back to its default
+           (not-saved) state if this lookup fails. */
+      });
     return () => {
       cancelled = true;
     };
@@ -68,9 +74,15 @@ export default function JobDetails() {
   useEffect(() => {
     if (!isAuthenticated || !isJobSeeker) return;
     let cancelled = false;
-    applicationsService.mine().then((apps) => {
-      if (!cancelled) setApplied(apps.some((a) => String(a.job.id) === String(id) && a.status !== "withdrawn"));
-    });
+    applicationsService
+      .mine()
+      .then((apps) => {
+        if (!cancelled) setApplied(apps.some((a) => String(a.job.id) === String(id) && a.status !== "withdrawn"));
+      })
+      .catch(() => {
+        /* Non-fatal: the Apply button just falls back to its default
+           (not-applied) state if this lookup fails. */
+      });
     return () => {
       cancelled = true;
     };

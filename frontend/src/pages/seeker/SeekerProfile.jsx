@@ -18,22 +18,27 @@ export default function SeekerProfile() {
   const [newExperience, setNewExperience] = useState(emptyExperience);
 
   const load = () => {
-    profileService.getSeekerProfile().then((data) => {
-      setProfile(data);
-      setForm({
-        headline: data.headline || "",
-        bio: data.bio || "",
-        location: data.location || "",
-        years_of_experience: data.years_of_experience ?? 0,
-        expected_salary: data.expected_salary ?? "",
-        github_url: data.github_url || "",
-        linkedin_url: data.linkedin_url || "",
-        portfolio_url: data.portfolio_url || "",
-      });
-    });
+    profileService
+      .getSeekerProfile()
+      .then((data) => {
+        setProfile(data);
+        setForm({
+          headline: data.headline || "",
+          bio: data.bio || "",
+          location: data.location || "",
+          years_of_experience: data.years_of_experience ?? 0,
+          expected_salary: data.expected_salary ?? "",
+          github_url: data.github_url || "",
+          linkedin_url: data.linkedin_url || "",
+          portfolio_url: data.portfolio_url || "",
+        });
+      })
+      .catch(() => setErrors({ detail: "Could not load your profile. Please refresh." }));
   };
 
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   if (!profile || !form) {
     return (

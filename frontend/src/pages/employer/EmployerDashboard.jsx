@@ -37,11 +37,19 @@ export default function EmployerDashboard() {
     <div className="min-h-screen bg-slate-50">
       <Navbar />
       <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Employer</p>
-          <h1 className="text-xl font-semibold text-slate-900">
-            Welcome, {user.full_name || user.email}
-          </h1>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-400">Employer</p>
+            <h1 className="text-xl font-semibold text-slate-900">
+              Welcome, {user.full_name || user.email}
+            </h1>
+          </div>
+          <Link
+            to="/employer/jobs/new"
+            className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800"
+          >
+            Post a job
+          </Link>
         </div>
 
         {error ? (
@@ -124,8 +132,11 @@ export default function EmployerDashboard() {
             <div className="space-y-2">
               {data.recently_posted_jobs.length === 0 && (
                 <p className="text-sm text-slate-400">
-                  No jobs posted yet. Job creation UI lands with a future phase -- for now, jobs
-                  can be created via the API directly.
+                  No jobs posted yet.{" "}
+                  <Link to="/employer/jobs/new" className="text-slate-900 font-medium hover:underline">
+                    Post your first one
+                  </Link>
+                  .
                 </p>
               )}
               {data.recently_posted_jobs.map((job) => (
@@ -140,12 +151,20 @@ export default function EmployerDashboard() {
                       <span className="capitalize">{job.status}</span>
                     </p>
                   </div>
-                  <Link
-                    to={`/employer/jobs/${job.id}/applicants`}
-                    className="text-sm text-slate-900 font-medium hover:underline"
-                  >
-                    Applicants
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      to={`/employer/jobs/${job.id}/edit`}
+                      className="text-sm text-slate-600 font-medium hover:underline"
+                    >
+                      Edit
+                    </Link>
+                    <Link
+                      to={`/employer/jobs/${job.id}/applicants`}
+                      className="text-sm text-slate-900 font-medium hover:underline"
+                    >
+                      Applicants
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

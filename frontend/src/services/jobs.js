@@ -32,6 +32,35 @@ export const jobsService = {
     const { data } = await api.get("/jobs/mine/");
     return data;
   },
+
+  async create(payload) {
+    const { data } = await api.post("/jobs/", payload);
+    return data;
+  },
+
+  async update(id, payload) {
+    const { data } = await api.patch(`/jobs/${id}/`, payload);
+    return data;
+  },
+
+  async remove(id) {
+    await api.delete(`/jobs/${id}/`);
+  },
+
+  async publish(id) {
+    const { data } = await api.post(`/jobs/${id}/publish/`);
+    return data;
+  },
+
+  async unpublish(id) {
+    const { data } = await api.post(`/jobs/${id}/unpublish/`);
+    return data;
+  },
+
+  async close(id) {
+    const { data } = await api.post(`/jobs/${id}/close/`);
+    return data;
+  },
 };
 
 export const companiesService = {
@@ -49,6 +78,16 @@ export const companiesService = {
     const { data } = await api.get(`/companies/${slug}/jobs/`, {
       params: cleanParams(params),
     });
+    return data;
+  },
+
+  async mine() {
+    const { data } = await api.get("/companies/mine/");
+    return data;
+  },
+
+  async create(payload) {
+    const { data } = await api.post("/companies/", payload);
     return data;
   },
 };

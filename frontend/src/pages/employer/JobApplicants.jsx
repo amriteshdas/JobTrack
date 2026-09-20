@@ -58,7 +58,15 @@ export default function JobApplicants() {
         <Link to="/employer" className="text-sm text-slate-500 hover:underline">
           &larr; Back to dashboard
         </Link>
-        <h1 className="mt-2 text-xl font-semibold text-slate-900">Applicants</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="mt-2 text-xl font-semibold text-slate-900">Applicants</h1>
+          <Link
+            to={`/employer/jobs/${jobId}/edit`}
+            className="text-sm text-slate-600 hover:underline"
+          >
+            Edit job
+          </Link>
+        </div>
 
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         {applications === null && !error && <p className="mt-4 text-sm text-slate-400">Loading…</p>}

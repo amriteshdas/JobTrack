@@ -21,6 +21,11 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
+              {user.role === "seeker" && (
+                <Link to="/seeker/profile" className="text-slate-600 hover:text-slate-900">
+                  Profile
+                </Link>
+              )}
               <NotificationsBell />
               <button onClick={logout} className="text-slate-600 hover:text-slate-900">
                 Log out

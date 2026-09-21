@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import Navbar from "../../components/Navbar";
 import SkillsInput from "../../components/SkillsInput";
 import { profileService } from "../../services/profile";
@@ -7,40 +6,45 @@ import { profileService } from "../../services/profile";
 const emptyEducation = { institution: "", degree: "", field_of_study: "", start_date: "", end_date: "" };
 const emptyExperience = { company_name: "", title: "", start_date: "", end_date: "", description: "" };
 
+/**
+ * A LinkedIn-style layout: read-only display is the default state for
+ * every section, with a small "Edit" affordance that swaps just that
+ * section into an editable form -- rather than one long always-editable
+ * form (the previous design). This matches how people actually expect a
+ * profile page to behave: mostly for reading (by the person themselves,
+ * or by an employer via the applicant view), occasionally edited one
+ * section at a time.
+ */
 export default function SeekerProfile() {
   const [profile, setProfile] = useState(null);
-  const [form, setForm] = useState(null);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [errors, setErrors] = useState({});
-
-  const [newEducation, setNewEducation] = useState(emptyEducation);
-  const [newExperience, setNewExperience] = useState(emptyExperience);
+  const [globalError, setGlobalError] = useState(null);
 
   const load = () => {
     profileService
       .getSeekerProfile()
-      .then((data) => {
-        setProfile(data);
-        setForm({
-          headline: data.headline || "",
-          bio: data.bio || "",
-          location: data.location || "",
-          years_of_experience: data.years_of_experience ?? 0,
-          expected_salary: data.expected_salary ?? "",
-          github_url: data.github_url || "",
-          linkedin_url: data.linkedin_url || "",
-          portfolio_url: data.portfolio_url || "",
-        });
-      })
-      .catch(() => setErrors({ detail: "Could not load your profile. Please refresh." }));
+      .then(setProfile)
+      .catch(() => setGlobalError("Could not load your profile. Please refresh."));
   };
 
   useEffect(() => {
     load();
   }, []);
 
-  if (!profile || !form) {
+  const flash = (text) => {
+    setMessage(text);
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  if (globalError) {
+    return (
+      <Shell>
+        <p className="text-sm text-red-600">{globalError}</p>
+      </Shell>
+    );
+  }
+
+  if (!profile) {
     return (
       <Shell>
         <p className="text-sm text-slate-400">Loading…</p>
@@ -48,15 +52,60 @@ export default function SeekerProfile() {
     );
   }
 
-  const saveBasics = async (e) => {
+  return (
+    <Shell>
+      {message && (
+        <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700">
+          {message}
+        </div>
+      )}
+
+      <ProfileHeader profile={profile} onUpdated={setProfile} onSaved={() => flash("Profile updated.")} />
+      <AboutCard profile={profile} onUpdated={setProfile} onSaved={() => flash("Profile updated.")} />
+      <ResumeCard profile={profile} onUpdated={setProfile} onSaved={() => flash("Resume uploaded.")} />
+      <SkillsCard profile={profile} onUpdated={setProfile} />
+      <EducationCard profile={profile} onReload={load} onSaved={() => flash("Education updated.")} />
+      <ExperienceCard profile={profile} onReload={load} onSaved={() => flash("Experience updated.")} />
+    </Shell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Header: photo, name, headline, location, links -- the "top card" LinkedIn
+// profiles open with.
+// ---------------------------------------------------------------------------
+
+function ProfileHeader({ profile, onUpdated, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const startEdit = () => {
+    setForm({
+      headline: profile.headline || "",
+      location: profile.location || "",
+      years_of_experience: profile.years_of_experience ?? 0,
+      expected_salary: profile.expected_salary ?? "",
+      github_url: profile.github_url || "",
+      linkedin_url: profile.linkedin_url || "",
+      portfolio_url: profile.portfolio_url || "",
+    });
+    setErrors({});
+    setEditing(true);
+  };
+
+  const save = async (e) => {
     e.preventDefault();
     setSaving(true);
     setErrors({});
-    setMessage(null);
     try {
       const updated = await profileService.updateSeekerProfile(form);
-      setProfile(updated);
-      setMessage("Profile saved.");
+      onUpdated(updated);
+      setEditing(false);
+      onSaved();
     } catch (err) {
       setErrors(err.response?.data || {});
     } finally {
@@ -64,258 +113,624 @@ export default function SeekerProfile() {
     }
   };
 
-  const uploadFile = async (field, file) => {
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingPhoto(true);
     try {
-      const updated = await profileService.updateSeekerProfile({ [field]: file });
-      setProfile(updated);
-      setMessage(field === "resume" ? "Resume uploaded." : "Photo uploaded.");
-    } catch (err) {
-      setErrors(err.response?.data || {});
+      const updated = await profileService.updateSeekerProfile({ profile_photo: file });
+      onUpdated(updated);
+      onSaved();
+    } catch {
+      alert("Could not upload photo. Make sure it's an image under 2MB.");
+    } finally {
+      setUploadingPhoto(false);
+      e.target.value = "";
     }
   };
 
-  const saveSkills = async (skills) => {
-    const updated = await profileService.setSkills(skills);
-    setProfile(updated);
-  };
+  const links = [
+    profile.github_url && { label: "GitHub", url: profile.github_url },
+    profile.linkedin_url && { label: "LinkedIn", url: profile.linkedin_url },
+    profile.portfolio_url && { label: "Portfolio", url: profile.portfolio_url },
+  ].filter(Boolean);
 
-  const addEducation = async (e) => {
-    e.preventDefault();
-    try {
-      await profileService.addEducation({
-        ...newEducation,
-        end_date: newEducation.end_date || null,
-      });
-      setNewEducation(emptyEducation);
-      load();
-    } catch (err) {
-      setErrors(err.response?.data || {});
-    }
-  };
+  return (
+    <Card>
+      <div className="flex items-start gap-5">
+        <div className="relative shrink-0 group">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="block h-24 w-24 rounded-full overflow-hidden bg-slate-100 border border-slate-200"
+            title="Change profile photo"
+          >
+            {profile.profile_photo ? (
+              <img src={profile.profile_photo} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="h-full w-full flex items-center justify-center text-2xl font-semibold text-slate-400">
+                {(profile.full_name || profile.email)[0]?.toUpperCase()}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingPhoto}
+            className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs hover:bg-slate-800 disabled:opacity-50 border-2 border-white"
+            title="Change profile photo"
+          >
+            {uploadingPhoto ? "…" : "\u270E"}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            className="hidden"
+          />
+        </div>
 
-  const addExperience = async (e) => {
+        <div className="flex-1 min-w-0">
+          {!editing ? (
+            <>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h1 className="text-xl font-semibold text-slate-900">{profile.full_name || profile.email}</h1>
+                  {profile.headline && <p className="text-sm text-slate-600 mt-0.5">{profile.headline}</p>}
+                  {profile.location && <p className="text-sm text-slate-400 mt-0.5">{profile.location}</p>}
+                </div>
+                <button
+                  onClick={startEdit}
+                  className="shrink-0 text-sm text-slate-500 hover:text-slate-900 hover:underline"
+                >
+                  Edit
+                </button>
+              </div>
+
+              {links.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-3">
+                  {links.map((l) => (
+                    <a
+                      key={l.label}
+                      href={l.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
+                    >
+                      {l.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+                <span>{profile.years_of_experience} yr{profile.years_of_experience === 1 ? "" : "s"} experience</span>
+                {profile.expected_salary && (
+                  <span>Expected: ₹{(profile.expected_salary / 100000).toFixed(1)}L</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <form onSubmit={save} className="space-y-3">
+              <Field label="Headline">
+                <input
+                  value={form.headline}
+                  onChange={(e) => setForm({ ...form, headline: e.target.value })}
+                  placeholder="e.g. Backend Engineer, 3 years experience"
+                  className="input"
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Location">
+                  <input
+                    value={form.location}
+                    onChange={(e) => setForm({ ...form, location: e.target.value })}
+                    className="input"
+                  />
+                </Field>
+                <Field label="Years of experience">
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.years_of_experience}
+                    onChange={(e) => setForm({ ...form, years_of_experience: e.target.value })}
+                    className="input"
+                  />
+                </Field>
+              </div>
+              <Field label="Expected salary" error={errors.expected_salary}>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.expected_salary}
+                  onChange={(e) => setForm({ ...form, expected_salary: e.target.value })}
+                  className="input"
+                />
+              </Field>
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="GitHub">
+                  <input
+                    value={form.github_url}
+                    onChange={(e) => setForm({ ...form, github_url: e.target.value })}
+                    className="input"
+                  />
+                </Field>
+                <Field label="LinkedIn">
+                  <input
+                    value={form.linkedin_url}
+                    onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
+                    className="input"
+                  />
+                </Field>
+                <Field label="Portfolio">
+                  <input
+                    value={form.portfolio_url}
+                    onChange={(e) => setForm({ ...form, portfolio_url: e.target.value })}
+                    className="input"
+                  />
+                </Field>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// About (bio)
+// ---------------------------------------------------------------------------
+
+function AboutCard({ profile, onUpdated, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [bio, setBio] = useState(profile.bio || "");
+  const [saving, setSaving] = useState(false);
+
+  const save = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
-      await profileService.addExperience({
-        ...newExperience,
-        end_date: newExperience.end_date || null,
-      });
-      setNewExperience(emptyExperience);
-      load();
-    } catch (err) {
-      setErrors(err.response?.data || {});
+      const updated = await profileService.updateSeekerProfile({ bio });
+      onUpdated(updated);
+      setEditing(false);
+      onSaved();
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <Shell>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Your profile</h1>
-        <Link to="/seeker/saved-jobs" className="text-sm text-slate-600 hover:underline">
-          Saved jobs
-        </Link>
-      </div>
-
-      {message && (
-        <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-
-      {/* Basics */}
-      <Card title="Basics">
-        <form onSubmit={saveBasics} className="space-y-4">
-          <Field label="Headline">
-            <input
-              value={form.headline}
-              onChange={(e) => setForm({ ...form, headline: e.target.value })}
-              placeholder="e.g. Backend Engineer, 3 years experience"
-              className="input"
-            />
-          </Field>
-          <Field label="About">
-            <textarea
-              value={form.bio}
-              onChange={(e) => setForm({ ...form, bio: e.target.value })}
-              rows={4}
-              className="input"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Location">
-              <input
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-                className="input"
-              />
-            </Field>
-            <Field label="Years of experience">
-              <input
-                type="number"
-                min="0"
-                value={form.years_of_experience}
-                onChange={(e) => setForm({ ...form, years_of_experience: e.target.value })}
-                className="input"
-              />
-            </Field>
+    <Card title="About" onEdit={!editing ? () => { setBio(profile.bio || ""); setEditing(true); } : undefined}>
+      {!editing ? (
+        profile.bio ? (
+          <p className="text-sm text-slate-600 whitespace-pre-line">{profile.bio}</p>
+        ) : (
+          <p className="text-sm text-slate-400">
+            Tell employers a bit about yourself -- click Edit to add a summary.
+          </p>
+        )
+      ) : (
+        <form onSubmit={save} className="space-y-3">
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={4}
+            className="input"
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
           </div>
-          <Field label="Expected salary" error={errors.expected_salary}>
-            <input
-              type="number"
-              min="0"
-              value={form.expected_salary}
-              onChange={(e) => setForm({ ...form, expected_salary: e.target.value })}
-              className="input"
-            />
-          </Field>
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="GitHub">
-              <input
-                value={form.github_url}
-                onChange={(e) => setForm({ ...form, github_url: e.target.value })}
-                className="input"
-              />
-            </Field>
-            <Field label="LinkedIn">
-              <input
-                value={form.linkedin_url}
-                onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
-                className="input"
-              />
-            </Field>
-            <Field label="Portfolio">
-              <input
-                value={form.portfolio_url}
-                onChange={(e) => setForm({ ...form, portfolio_url: e.target.value })}
-                className="input"
-              />
-            </Field>
-          </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
-          >
-            {saving ? "Saving…" : "Save"}
-          </button>
         </form>
-      </Card>
+      )}
+    </Card>
+  );
+}
 
-      {/* Resume & photo */}
-      <Card title="Resume">
-        <p className="text-sm text-slate-500 mb-2">
-          {profile.resume ? (
-            <a href={profile.resume} target="_blank" rel="noreferrer" className="text-slate-900 hover:underline">
-              View current resume
-            </a>
-          ) : (
-            "No resume uploaded yet."
-          )}
-        </p>
+// ---------------------------------------------------------------------------
+// Resume
+// ---------------------------------------------------------------------------
+
+function ResumeCard({ profile, onUpdated, onSaved }) {
+  const [error, setError] = useState(null);
+  const inputRef = useRef(null);
+
+  const upload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setError(null);
+    try {
+      const updated = await profileService.updateSeekerProfile({ resume: file });
+      onUpdated(updated);
+      onSaved();
+    } catch (err) {
+      setError(err.response?.data?.resume?.[0] || "Could not upload resume.");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <Card title="Resume">
+      <p className="text-sm text-slate-500 mb-2">
+        {profile.resume ? (
+          <a href={profile.resume} target="_blank" rel="noreferrer" className="text-slate-900 hover:underline">
+            View current resume
+          </a>
+        ) : (
+          "No resume uploaded yet. This is used by default when you apply to jobs."
+        )}
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+        >
+          {profile.resume ? "Change resume" : "Upload resume"}
+        </button>
         <input
+          ref={inputRef}
           type="file"
           accept=".pdf,.doc,.docx"
-          onChange={(e) => e.target.files[0] && uploadFile("resume", e.target.files[0])}
-          className="text-sm"
+          onChange={upload}
+          className="hidden"
         />
-        {errors.resume && <p className="mt-1 text-xs text-red-600">{errors.resume}</p>}
-      </Card>
+      </div>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+    </Card>
+  );
+}
 
-      {/* Skills */}
-      <Card title="Skills">
-        <SkillsInput
-          skills={profile.skills.map((s) => s.name)}
-          onChange={saveSkills}
-        />
-      </Card>
+// ---------------------------------------------------------------------------
+// Skills -- the chip input is already an in-place editor, so no separate
+// view/edit toggle is needed here.
+// ---------------------------------------------------------------------------
 
-      {/* Education */}
-      <Card title="Education">
-        <div className="space-y-3 mb-4">
-          {profile.education.length === 0 && (
-            <p className="text-sm text-slate-400">No education added yet.</p>
-          )}
-          {profile.education.map((edu) => (
-            <div key={edu.id} className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2">
+function SkillsCard({ profile, onUpdated }) {
+  const saveSkills = async (skills) => {
+    const updated = await profileService.setSkills(skills);
+    onUpdated(updated);
+  };
+
+  return (
+    <Card title="Skills">
+      <SkillsInput skills={profile.skills.map((s) => s.name)} onChange={saveSkills} />
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Education -- list of entries, each independently editable in place
+// ---------------------------------------------------------------------------
+
+function EducationCard({ profile, onReload, onSaved }) {
+  const [editingId, setEditingId] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState(emptyEducation);
+  const [error, setError] = useState(null);
+
+  const startEdit = (edu) => {
+    setForm({
+      institution: edu.institution,
+      degree: edu.degree,
+      field_of_study: edu.field_of_study || "",
+      start_date: edu.start_date,
+      end_date: edu.end_date || "",
+    });
+    setEditingId(edu.id);
+    setAdding(false);
+    setError(null);
+  };
+
+  const startAdd = () => {
+    setForm(emptyEducation);
+    setAdding(true);
+    setEditingId(null);
+    setError(null);
+  };
+
+  const cancel = () => {
+    setEditingId(null);
+    setAdding(false);
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    const payload = { ...form, end_date: form.end_date || null };
+    try {
+      if (editingId) await profileService.updateEducation(editingId, payload);
+      else await profileService.addEducation(payload);
+      cancel();
+      onReload();
+      onSaved();
+    } catch (err) {
+      setError(err.response?.data?.end_date?.[0] || "Could not save this entry.");
+    }
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm("Remove this education entry?")) return;
+    await profileService.deleteEducation(id);
+    onReload();
+  };
+
+  return (
+    <Card title="Education" onEdit={!adding ? startAdd : undefined} editLabel="+ Add">
+      <div className="space-y-2">
+        {profile.education.length === 0 && !adding && (
+          <p className="text-sm text-slate-400">No education added yet.</p>
+        )}
+        {profile.education.map((edu) =>
+          editingId === edu.id ? (
+            <EntryForm
+              key={edu.id}
+              error={error}
+              fields={[
+                { key: "institution", label: "Institution", required: true },
+                { key: "degree", label: "Degree", required: true },
+                { key: "field_of_study", label: "Field of study" },
+              ]}
+              form={form}
+              setForm={setForm}
+              onSubmit={submit}
+              onCancel={cancel}
+            />
+          ) : (
+            <div
+              key={edu.id}
+              className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2"
+            >
               <div>
-                <p className="text-sm font-medium text-slate-900">{edu.degree} · {edu.institution}</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {edu.degree}
+                  {edu.field_of_study && ` in ${edu.field_of_study}`} · {edu.institution}
+                </p>
                 <p className="text-xs text-slate-400">
                   {edu.start_date} — {edu.end_date || "Present"}
                 </p>
               </div>
-              <button
-                onClick={() => profileService.deleteEducation(edu.id).then(load)}
-                className="text-xs text-slate-400 hover:text-red-600"
-              >
-                Remove
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                <button onClick={() => startEdit(edu)} className="text-xs text-slate-500 hover:text-slate-900">
+                  Edit
+                </button>
+                <button onClick={() => remove(edu.id)} className="text-xs text-slate-400 hover:text-red-600">
+                  Remove
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-        <form onSubmit={addEducation} className="grid grid-cols-2 gap-3">
-          <input placeholder="Institution" value={newEducation.institution}
-            onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
-            className="input" required />
-          <input placeholder="Degree" value={newEducation.degree}
-            onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
-            className="input" required />
-          <input type="date" value={newEducation.start_date}
-            onChange={(e) => setNewEducation({ ...newEducation, start_date: e.target.value })}
-            className="input" required />
-          <input type="date" value={newEducation.end_date}
-            onChange={(e) => setNewEducation({ ...newEducation, end_date: e.target.value })}
-            className="input" placeholder="Leave blank if ongoing" />
-          <button type="submit" className="col-span-2 rounded-lg border border-slate-300 py-2 text-sm text-slate-700 hover:bg-slate-50">
-            Add education
-          </button>
-        </form>
-      </Card>
+          )
+        )}
+        {adding && (
+          <EntryForm
+            error={error}
+            fields={[
+              { key: "institution", label: "Institution", required: true },
+              { key: "degree", label: "Degree", required: true },
+              { key: "field_of_study", label: "Field of study" },
+            ]}
+            form={form}
+            setForm={setForm}
+            onSubmit={submit}
+            onCancel={cancel}
+          />
+        )}
+      </div>
+    </Card>
+  );
+}
 
-      {/* Experience */}
-      <Card title="Experience">
-        <div className="space-y-3 mb-4">
-          {profile.experience.length === 0 && (
-            <p className="text-sm text-slate-400">No experience added yet.</p>
-          )}
-          {profile.experience.map((exp) => (
-            <div key={exp.id} className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2">
+// ---------------------------------------------------------------------------
+// Experience -- same in-place edit pattern as Education
+// ---------------------------------------------------------------------------
+
+function ExperienceCard({ profile, onReload, onSaved }) {
+  const [editingId, setEditingId] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState(emptyExperience);
+  const [error, setError] = useState(null);
+
+  const startEdit = (exp) => {
+    setForm({
+      company_name: exp.company_name,
+      title: exp.title,
+      start_date: exp.start_date,
+      end_date: exp.end_date || "",
+      description: exp.description || "",
+    });
+    setEditingId(exp.id);
+    setAdding(false);
+    setError(null);
+  };
+
+  const startAdd = () => {
+    setForm(emptyExperience);
+    setAdding(true);
+    setEditingId(null);
+    setError(null);
+  };
+
+  const cancel = () => {
+    setEditingId(null);
+    setAdding(false);
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    const payload = { ...form, end_date: form.end_date || null };
+    try {
+      if (editingId) await profileService.updateExperience(editingId, payload);
+      else await profileService.addExperience(payload);
+      cancel();
+      onReload();
+      onSaved();
+    } catch (err) {
+      setError(err.response?.data?.end_date?.[0] || "Could not save this entry.");
+    }
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm("Remove this experience entry?")) return;
+    await profileService.deleteExperience(id);
+    onReload();
+  };
+
+  return (
+    <Card title="Experience" onEdit={!adding ? startAdd : undefined} editLabel="+ Add">
+      <div className="space-y-2">
+        {profile.experience.length === 0 && !adding && (
+          <p className="text-sm text-slate-400">No experience added yet.</p>
+        )}
+        {profile.experience.map((exp) =>
+          editingId === exp.id ? (
+            <EntryForm
+              key={exp.id}
+              error={error}
+              fields={[
+                { key: "company_name", label: "Company", required: true },
+                { key: "title", label: "Title", required: true },
+                { key: "description", label: "Description", textarea: true },
+              ]}
+              form={form}
+              setForm={setForm}
+              onSubmit={submit}
+              onCancel={cancel}
+            />
+          ) : (
+            <div
+              key={exp.id}
+              className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2"
+            >
               <div>
-                <p className="text-sm font-medium text-slate-900">{exp.title} · {exp.company_name}</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {exp.title} · {exp.company_name}
+                </p>
                 <p className="text-xs text-slate-400">
                   {exp.start_date} — {exp.is_current ? "Present" : exp.end_date}
                 </p>
+                {exp.description && <p className="text-sm text-slate-500 mt-0.5">{exp.description}</p>}
               </div>
-              <button
-                onClick={() => profileService.deleteExperience(exp.id).then(load)}
-                className="text-xs text-slate-400 hover:text-red-600"
-              >
-                Remove
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                <button onClick={() => startEdit(exp)} className="text-xs text-slate-500 hover:text-slate-900">
+                  Edit
+                </button>
+                <button onClick={() => remove(exp.id)} className="text-xs text-slate-400 hover:text-red-600">
+                  Remove
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-        <form onSubmit={addExperience} className="grid grid-cols-2 gap-3">
-          <input placeholder="Company" value={newExperience.company_name}
-            onChange={(e) => setNewExperience({ ...newExperience, company_name: e.target.value })}
-            className="input" required />
-          <input placeholder="Title" value={newExperience.title}
-            onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })}
-            className="input" required />
-          <input type="date" value={newExperience.start_date}
-            onChange={(e) => setNewExperience({ ...newExperience, start_date: e.target.value })}
-            className="input" required />
-          <input type="date" value={newExperience.end_date}
-            onChange={(e) => setNewExperience({ ...newExperience, end_date: e.target.value })}
-            className="input" placeholder="Leave blank if current" />
-          <textarea placeholder="Description" value={newExperience.description}
-            onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
-            className="input col-span-2" rows={2} />
-          <button type="submit" className="col-span-2 rounded-lg border border-slate-300 py-2 text-sm text-slate-700 hover:bg-slate-50">
-            Add experience
-          </button>
-        </form>
-      </Card>
-    </Shell>
+          )
+        )}
+        {adding && (
+          <EntryForm
+            error={error}
+            fields={[
+              { key: "company_name", label: "Company", required: true },
+              { key: "title", label: "Title", required: true },
+              { key: "description", label: "Description", textarea: true },
+            ]}
+            form={form}
+            setForm={setForm}
+            onSubmit={submit}
+            onCancel={cancel}
+          />
+        )}
+      </div>
+    </Card>
+  );
+}
+
+/** Shared mini-form for one education or experience entry (add or edit). */
+function EntryForm({ fields, form, setForm, onSubmit, onCancel, error }) {
+  return (
+    <form onSubmit={onSubmit} className="border border-slate-200 rounded-lg p-3 space-y-2 bg-slate-50">
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      {fields.map((f) =>
+        f.textarea ? (
+          <textarea
+            key={f.key}
+            placeholder={f.label}
+            value={form[f.key]}
+            onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+            className="input"
+            rows={2}
+          />
+        ) : (
+          <input
+            key={f.key}
+            placeholder={f.label}
+            value={form[f.key]}
+            onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+            required={f.required}
+            className="input"
+          />
+        )
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          type="date"
+          value={form.start_date}
+          onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+          required
+          className="input"
+        />
+        <input
+          type="date"
+          value={form.end_date}
+          onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+          placeholder="Leave blank if ongoing"
+          className="input"
+        />
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          className="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-sm font-medium hover:bg-slate-800"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -329,10 +744,19 @@ function Shell({ children }) {
   );
 }
 
-function Card({ title, children }) {
+function Card({ title, children, onEdit, editLabel = "Edit" }) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-5">
-      <h2 className="text-sm font-semibold text-slate-900 mb-3">{title}</h2>
+      {title && (
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+          {onEdit && (
+            <button onClick={onEdit} className="text-sm text-slate-500 hover:text-slate-900 hover:underline">
+              {editLabel}
+            </button>
+          )}
+        </div>
+      )}
       {children}
     </div>
   );

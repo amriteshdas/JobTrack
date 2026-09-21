@@ -36,12 +36,22 @@ export const profileService = {
     return data;
   },
 
+  async updateEducation(id, payload) {
+    const { data } = await api.patch(`/profiles/seeker/me/education/${id}/`, payload);
+    return data;
+  },
+
   async deleteEducation(id) {
     await api.delete(`/profiles/seeker/me/education/${id}/`);
   },
 
   async addExperience(payload) {
     const { data } = await api.post("/profiles/seeker/me/experience/", payload);
+    return data;
+  },
+
+  async updateExperience(id, payload) {
+    const { data } = await api.patch(`/profiles/seeker/me/experience/${id}/`, payload);
     return data;
   },
 

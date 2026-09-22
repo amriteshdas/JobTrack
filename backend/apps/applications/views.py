@@ -1,7 +1,8 @@
 import os
 
 from django.core.files.base import ContentFile
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -64,6 +65,7 @@ class SavedJobListView(APIView):
 
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
+    @extend_schema(responses=SavedJobSerializer(many=True))
     def get(self, request):
         # select_related/prefetch_related here for the same reason as
         # Job's own list view in Phase 4: avoid N+1 across saved jobs' company
@@ -75,6 +77,10 @@ class SavedJobListView(APIView):
         )
         return Response(SavedJobSerializer(qs, many=True).data)
 
+    @extend_schema(
+        request=inline_serializer("SaveJobRequest", {"job": serializers.IntegerField()}),
+        responses={201: SavedJobSerializer, 409: None},
+    )
     def post(self, request):
         job_id = request.data.get("job")
         job = Job.objects.filter(id=job_id).first()
@@ -105,6 +111,7 @@ class SavedJobDetailView(APIView):
 
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
+    @extend_schema(responses={204: None, 404: None})
     def delete(self, request, job_id):
         deleted, _ = SavedJob.objects.filter(user=request.user, job_id=job_id).delete()
         if not deleted:
@@ -132,6 +139,12 @@ class ApplyToJobView(APIView):
 
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
+    @extend_schema(
+        request=ApplicationCreateSerializer,
+        responses={201: ApplicationSerializer, 400: None, 404: None, 409: None},
+        description="`resume` is optional -- omit it to apply with the resume already "
+        "on your profile (a snapshot is taken at apply time).",
+    )
     def post(self, request, job_id):
         job = Job.objects.filter(id=job_id).first()
         if job is None or job.status == Job.Status.DRAFT:
@@ -195,6 +208,7 @@ class MyApplicationsView(APIView):
 
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
+    @extend_schema(responses=ApplicationSerializer(many=True))
     def get(self, request):
         # select_related("applicant__jobseeker_profile") pre-existed as a
         # gap even before ApplicantSerializer grew education/experience --
@@ -228,6 +242,9 @@ class WithdrawApplicationView(APIView):
 
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
+    @extend_schema(
+        request=None, responses={200: ApplicationSerializer, 404: None, 409: None}
+    )
     def post(self, request, pk):
         application = Application.objects.filter(pk=pk, applicant=request.user).first()
         if application is None:
@@ -258,6 +275,7 @@ class JobApplicantsView(APIView):
 
     permission_classes = [IsAuthenticated, IsEmployer]
 
+    @extend_schema(responses={200: ApplicationSerializer(many=True), 404: None})
     def get(self, request, job_id):
         job = Job.objects.filter(id=job_id).first()
         if job is None:
@@ -308,6 +326,10 @@ class ApplicationStatusView(APIView):
 
     permission_classes = [IsAuthenticated, IsEmployer]
 
+    @extend_schema(
+        request=ApplicationStatusUpdateSerializer,
+        responses={200: ApplicationSerializer, 400: None, 404: None},
+    )
     def patch(self, request, pk):
         application = Application.objects.select_related(
             "job__company", "applicant"

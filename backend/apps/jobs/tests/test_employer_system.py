@@ -413,3 +413,71 @@ def test_mine_excludes_other_companies_jobs(auth, employer_b, company_b, publish
     client = auth(employer_b)
     r = client.get(f"{JOBS}mine/")
     assert r.data == []
+
+
+# ---------------------------------------------------------------------------
+# JobWriteSerializer edge cases (Phase 9 coverage pass)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_creating_a_job_already_published_stamps_published_at(auth, employer_a, company_a):
+    """
+    Every other publish test goes through the dedicated /publish/ action.
+    This covers the other path: status="published" set directly in the
+    creation payload should still stamp published_at, not leave it null.
+    """
+    client = auth(employer_a)
+    r = client.post(JOBS, job_payload(company_a, status="published"), format="json")
+    assert r.status_code == 201
+    assert r.data["status"] == "published"
+    assert r.data["published_at"] is not None
+
+
+@pytest.mark.django_db
+def test_patching_status_to_published_stamps_published_at(auth, employer_a, draft_job):
+    """Same as above, via PATCH rather than the /publish/ action."""
+    client = auth(employer_a)
+    r = client.patch(f"{JOBS}{draft_job.id}/", {"status": "published"}, format="json")
+    assert r.status_code == 200
+    assert r.data["published_at"] is not None
+
+
+@pytest.mark.django_db
+def test_updating_skills_via_patch_replaces_the_set(auth, employer_a, published_job):
+    client = auth(employer_a)
+    client.patch(f"{JOBS}{published_job.id}/", {"skills": ["Python"]}, format="json")
+    r = client.patch(f"{JOBS}{published_job.id}/", {"skills": ["Go", "Rust"]}, format="json")
+    assert {s["name"] for s in r.data["skills"]} == {"Go", "Rust"}
+
+
+@pytest.mark.django_db
+def test_sync_skills_skips_blank_entries_after_stripping(employer_a, company_a):
+    """
+    Not reachable through the public API at all: DRF's CharField has
+    trim_whitespace=True by default, so it strips AND rejects a
+    whitespace-only list entry with "This field may not be blank." before
+    _sync_skills ever runs (confirmed directly against a live server --
+    POSTing skills=["Python", "   "] returns 400 from the field itself,
+    not a 201 with the whitespace entry silently dropped).
+
+    _sync_skills' own strip+skip is kept anyway as defense-in-depth: it's
+    a shared private helper, not exclusively reachable via this one
+    DRF-validated path, so a future caller that builds a skills list by
+    hand (a bulk-import script, an admin action) would still be protected.
+    Since the public API can never exercise that branch, testing it means
+    calling the private method directly -- the honest way to cover
+    defense-in-depth code the "real" path can't reach, rather than
+    contriving a fake API request that doesn't represent how it's used.
+    """
+    from apps.jobs.serializers import JobWriteSerializer
+
+    job = Job.objects.create(
+        company=company_a, posted_by=employer_a.employer_profile,
+        title="Coverage Job", description="d", location="K",
+        work_mode=Job.WorkMode.REMOTE, employment_type=Job.EmploymentType.FULL_TIME,
+    )
+
+    JobWriteSerializer()._sync_skills(job, ["Python", "   ", "Django"])
+
+    assert {s.name for s in job.skills.all()} == {"Python", "Django"}
+    assert not Skill.objects.filter(name="").exists()

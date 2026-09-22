@@ -3,6 +3,8 @@ from datetime import timedelta
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +15,85 @@ from apps.interviews.models import Interview
 from apps.interviews.serializers import InterviewSerializer
 from apps.jobs.models import Job
 from apps.jobs.serializers import JobSerializer
+
+# Documentation-only shapes for the two hand-built aggregate responses
+# below. Neither dashboard endpoint is backed by a single model, so unlike
+# every other view in this project there's no natural ModelSerializer to
+# point drf-spectacular at -- these exist purely so the generated API docs
+# describe the real response shape instead of dropping these endpoints
+# (drf-spectacular silently omits any view it can't introspect a
+# serializer for) or documenting them as an opaque, untyped object.
+_SeekerDashboardResponseSerializer = inline_serializer(
+    "SeekerDashboardResponse",
+    {
+        "stats": inline_serializer(
+            "SeekerDashboardStats",
+            {
+                "total_applications": serializers.IntegerField(),
+                "under_review": serializers.IntegerField(),
+                "shortlisted": serializers.IntegerField(),
+                "interview": serializers.IntegerField(),
+                "selected": serializers.IntegerField(),
+                "saved_jobs": serializers.IntegerField(),
+            },
+        ),
+        "recent_applications": inline_serializer(
+            "RecentApplicationSummary",
+            {
+                "id": serializers.IntegerField(),
+                "job_id": serializers.IntegerField(),
+                "job_title": serializers.CharField(),
+                "company_name": serializers.CharField(),
+                "status": serializers.CharField(),
+                "applied_at": serializers.DateTimeField(),
+            },
+            many=True,
+        ),
+        "recommended_jobs": JobSerializer(many=True),
+        "upcoming_interviews": InterviewSerializer(many=True),
+    },
+)
+
+_EmployerDashboardResponseSerializer = inline_serializer(
+    "EmployerDashboardResponse",
+    {
+        "stats": inline_serializer(
+            "EmployerDashboardStats",
+            {
+                "total_jobs": serializers.IntegerField(),
+                "active_jobs": serializers.IntegerField(),
+                "applications_received": serializers.IntegerField(),
+                "shortlisted": serializers.IntegerField(),
+                "interviews_scheduled": serializers.IntegerField(),
+            },
+        ),
+        "recently_posted_jobs": JobSerializer(many=True),
+        "charts": inline_serializer(
+            "EmployerDashboardCharts",
+            {
+                "applications_per_job": inline_serializer(
+                    "ApplicationsPerJob",
+                    {
+                        "job_id": serializers.IntegerField(),
+                        "title": serializers.CharField(),
+                        "count": serializers.IntegerField(),
+                    },
+                    many=True,
+                ),
+                "status_distribution": inline_serializer(
+                    "StatusDistribution",
+                    {"status": serializers.CharField(), "count": serializers.IntegerField()},
+                    many=True,
+                ),
+                "applications_over_time": inline_serializer(
+                    "ApplicationsOverTime",
+                    {"date": serializers.DateField(), "count": serializers.IntegerField()},
+                    many=True,
+                ),
+            },
+        ),
+    },
+)
 
 # Statuses that count as "still active" from the seeker's point of view --
 # used to decide which recent applications are worth surfacing prominently.
@@ -37,6 +118,7 @@ class SeekerDashboardView(APIView):
 
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
+    @extend_schema(responses=_SeekerDashboardResponseSerializer)
     def get(self, request):
         user = request.user
         applications = Application.objects.filter(applicant=user)
@@ -127,6 +209,7 @@ class EmployerDashboardView(APIView):
 
     permission_classes = [IsAuthenticated, IsEmployer]
 
+    @extend_schema(responses=_EmployerDashboardResponseSerializer)
     def get(self, request):
         profile = getattr(request.user, "employer_profile", None)
         if profile is None:

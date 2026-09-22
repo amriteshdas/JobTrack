@@ -1,25 +1,17 @@
 """
-URL configuration for config project.
+Root URL configuration.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.conf import settings
-from django.conf.urls.static import static
-from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+Routes are grouped by app, each included via that app's own urls.py.
+The one exception is a handful of endpoints (saved-jobs, apply, applicants,
+interviews) that live under apps.applications/apps.interviews but sit at
+the API root rather than a per-app prefix, because their URLs read more
+naturally as /api/jobs/{id}/apply/ than as /api/applications/jobs/{id}/apply/.
 """
-from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
 from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 from apps.core.views import health_check
 
@@ -34,6 +26,14 @@ urlpatterns = [
     path('api/', include('apps.interviews.urls')),
     path('api/notifications/', include('apps.notifications.urls')),
     path('api/dashboard/', include('apps.dashboard.urls')),
+
+    # API documentation. schema/ serves the raw OpenAPI 3 spec (JSON);
+    # docs/ and redoc/ are two different UIs over the same spec -- Swagger
+    # UI is better for trying requests interactively (has an Authorize
+    # button for the JWT), Redoc is better for reading as a reference doc.
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
 
 if settings.DEBUG:

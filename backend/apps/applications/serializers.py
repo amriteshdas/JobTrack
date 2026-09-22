@@ -1,4 +1,7 @@
+from typing import Optional
+
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.jobs.models import Job
@@ -63,54 +66,66 @@ class ApplicantSerializer(serializers.Serializer):
         url = profile.profile_photo.url
         return request.build_absolute_uri(url) if request else url
 
-    def get_headline(self, user):
+    # Return type hints below are not decoration -- drf-spectacular reads
+    # them directly to type each SerializerMethodField in the generated
+    # schema. Without them every one of these defaults to "string", which
+    # is simply wrong for years_of_experience/expected_salary (numbers),
+    # skills (an array), and education/experience (nested objects) --
+    # @extend_schema_field is used instead of a hint for those three,
+    # since "the shape is a list of EducationSerializer" isn't expressible
+    # as a plain Python type annotation.
+
+    def get_headline(self, user) -> str:
         profile = self._profile(user)
         return profile.headline if profile else ""
 
-    def get_bio(self, user):
+    def get_bio(self, user) -> str:
         profile = self._profile(user)
         return profile.bio if profile else ""
 
-    def get_phone(self, user):
+    def get_phone(self, user) -> str:
         profile = self._profile(user)
         return profile.phone if profile else ""
 
-    def get_location(self, user):
+    def get_location(self, user) -> str:
         profile = self._profile(user)
         return profile.location if profile else ""
 
-    def get_profile_photo(self, user):
+    def get_profile_photo(self, user) -> Optional[str]:
         profile = self._profile(user)
         return self._photo_url(profile) if profile else None
 
-    def get_years_of_experience(self, user):
+    def get_years_of_experience(self, user) -> int:
         profile = self._profile(user)
         return profile.years_of_experience if profile else 0
 
-    def get_expected_salary(self, user):
+    def get_expected_salary(self, user) -> Optional[int]:
         profile = self._profile(user)
         return profile.expected_salary if profile else None
 
-    def get_github_url(self, user):
+    def get_github_url(self, user) -> str:
         profile = self._profile(user)
         return profile.github_url if profile else ""
 
-    def get_linkedin_url(self, user):
+    def get_linkedin_url(self, user) -> str:
         profile = self._profile(user)
         return profile.linkedin_url if profile else ""
 
-    def get_portfolio_url(self, user):
+    def get_portfolio_url(self, user) -> str:
         profile = self._profile(user)
         return profile.portfolio_url if profile else ""
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_skills(self, user):
         profile = self._profile(user)
         return [s.name for s in profile.skills.all()] if profile else []
 
+    @extend_schema_field(EducationSerializer(many=True))
     def get_education(self, user):
         profile = self._profile(user)
         return EducationSerializer(profile.education.all(), many=True).data if profile else []
 
+    @extend_schema_field(ExperienceSerializer(many=True))
     def get_experience(self, user):
         profile = self._profile(user)
         return ExperienceSerializer(profile.experience.all(), many=True).data if profile else []

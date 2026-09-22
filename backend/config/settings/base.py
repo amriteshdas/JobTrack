@@ -50,6 +50,7 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_filters",
+    "drf_spectacular",
 ]
 
 # Every app lives under apps.<name> per the Phase 0 app structure.
@@ -145,6 +146,22 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
+# Cache -- backs the auth-endpoint rate limiting below (ScopedRateThrottle
+# stores its request counts here).
+# ---------------------------------------------------------------------------
+# LocMemCache is IN-PROCESS: with more than one worker process (any real
+# deployment), each worker has its own independent counter, so the "10/min"
+# limit actually becomes "10/min per worker" -- a real gap, not a
+# theoretical one. Fixing it needs a cache shared across processes (Redis),
+# which Phase 0 deliberately deferred to Phase 10. Documented here rather
+# than silently shipping a limit that looks stricter than it is.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Django REST Framework
 # ---------------------------------------------------------------------------
 # Authentication classes are configured now (SimpleJWT) so the setting exists
@@ -165,6 +182,50 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ),
+    "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
+    # ScopedRateThrottle is a no-op for any view that doesn't set
+    # `throttle_scope`, so registering it globally here does NOT rate-limit
+    # the whole API -- only the specific views that opt in (register/login,
+    # see their throttle_scope = "auth"). Blanket throttling on every
+    # endpoint is deliberately out of scope for the MVP: without real
+    # traffic data, picking sensible per-endpoint limits is guesswork, and
+    # guessed limits are as likely to block legitimate users as attackers.
+    # Auth endpoints are the one place a conservative limit is justified
+    # regardless of traffic data, because credential-stuffing risk doesn't
+    # depend on how popular the site is.
+    "DEFAULT_THROTTLE_CLASSES": ("rest_framework.throttling.ScopedRateThrottle",),
+    "DEFAULT_THROTTLE_RATES": {
+        "auth": "10/min",
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "JobTrack API",
+    "DESCRIPTION": (
+        "REST API for JobTrack, a two-sided job marketplace. "
+        "Endpoints are grouped by app below; each requires the auth/role "
+        "noted in its description. Authenticate via /api/auth/login/, "
+        "then use the Authorize button with `Bearer <access_token>`."
+    ),
+    "VERSION": "1.0.0",
+    # Without this, drf-spectacular includes its own schema/docs endpoints
+    # in the generated schema -- meta-documentation nobody needs.
+    "SERVE_INCLUDE_SCHEMA": False,
+    # Keeps generated operationIds readable (e.g. "jobs_list" rather than
+    # a path-derived hash) across the ViewSets and APIViews mixed
+    # throughout this project.
+    "COMPONENT_SPLIT_REQUEST": True,
+    # Job, Application, and Interview each have their own `status` field
+    # with entirely different choices. Without this, drf-spectacular can't
+    # tell the three apart (they're all just fields named "status") and
+    # auto-generates hash-suffixed names like "Status324Enum" in the
+    # schema -- functionally fine, but useless for a human reading the docs.
+    "ENUM_NAME_OVERRIDES": {
+        "JobStatusEnum": "apps.jobs.models.Job.Status",
+        "ApplicationStatusEnum": "apps.applications.models.Application.Status",
+        "InterviewStatusEnum": "apps.interviews.models.Interview.Status",
+    },
 }
 
 SIMPLE_JWT = {

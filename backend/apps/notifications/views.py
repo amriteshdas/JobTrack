@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -12,6 +13,7 @@ class NotificationListView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=NotificationSerializer(many=True))
     def get(self, request):
         qs = Notification.objects.filter(recipient=request.user)
         return Response(NotificationSerializer(qs, many=True).data)
@@ -22,6 +24,7 @@ class MarkNotificationReadView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(request=None, responses={200: NotificationSerializer, 404: None})
     def patch(self, request, pk):
         notification = Notification.objects.filter(pk=pk, recipient=request.user).first()
         if notification is None:

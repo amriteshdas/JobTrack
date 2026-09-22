@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -61,6 +62,7 @@ class UpdateSkillsView(APIView):
 
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
+    @extend_schema(request=UpdateSkillsSerializer, responses=JobSeekerProfileSerializer)
     def put(self, request):
         profile, _ = JobSeekerProfile.objects.get_or_create(user=request.user)
         serializer = UpdateSkillsSerializer(data=request.data, context={"profile": profile})
@@ -80,6 +82,14 @@ class _OwnProfileNestedViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
     def get_queryset(self):
+        # drf-spectacular introspects this method at schema-generation time
+        # with an AnonymousUser and no real request -- get_or_create(user=
+        # AnonymousUser) would raise. This guard is the standard pattern
+        # for that (recommended by drf-spectacular's own warning message),
+        # not a security check: schema generation never serves real traffic.
+        if getattr(self, "swagger_fake_view", False):
+            return self.queryset_model.objects.none()
+
         # Scoping happens in the QUERYSET, not via an object-level
         # permission check -- so another job seeker's entries are not
         # merely forbidden to edit, they are absent from a list/retrieve

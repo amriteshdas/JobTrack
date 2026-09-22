@@ -1,4 +1,5 @@
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -30,6 +31,9 @@ class RegisterView(CreateAPIView):
 
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+    # Scoped to the "auth" rate (10/min per IP, see REST_FRAMEWORK settings)
+    # -- registration abuse (mass account creation) is the risk here.
+    throttle_scope = "auth"
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -60,6 +64,9 @@ class LoginView(TokenObtainPairView):
 
     serializer_class = JobTrackTokenObtainPairSerializer
     permission_classes = [AllowAny]
+    # Scoped to the "auth" rate -- this is the actual credential-stuffing
+    # surface, the reason this throttle exists at all.
+    throttle_scope = "auth"
 
 
 class LogoutView(APIView):
@@ -87,6 +94,12 @@ class LogoutView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=inline_serializer("LogoutRequest", {"refresh": serializers.CharField()}),
+        responses={205: None, 400: None},
+        description="Blacklists the given refresh token. The access token remains valid "
+        "until it naturally expires (see the class docstring for why).",
+    )
     def post(self, request):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
@@ -126,5 +139,9 @@ class MeView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses=inline_serializer("MeResponse", {"user": UserSerializer()}),
+        description="Returns the authenticated user. Called on app load to restore session state.",
+    )
     def get(self, request):
         return Response({"user": UserSerializer(request.user).data})

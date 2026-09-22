@@ -45,6 +45,14 @@ class RegisterSerializer(serializers.ModelSerializer):
        Role is set once at registration; a seeker cannot promote themselves
        to employer by PATCHing their own record. This is the difference
        between "we have roles" and "our roles are actually enforceable".
+
+    No custom `validate_role` here (an earlier version had one, rejecting
+    anything outside seeker/employer): ModelSerializer auto-builds `role`
+    as a ChoiceField because User.role has `choices=` at the model level,
+    and ChoiceField already rejects an invalid value before any custom
+    field validator would run. A hand-written check duplicating that is
+    dead code, confirmed by testing it directly against the serializer --
+    worth stating explicitly so nobody re-adds it assuming it's needed.
     """
 
     password = serializers.CharField(
@@ -71,14 +79,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         value = value.lower()
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("An account with this email already exists.")
-        return value
-
-    def validate_role(self, value):
-        # Explicitly reject anything outside our two roles. Without this a
-        # client could try role="admin" and rely on a typo'd permission
-        # check somewhere downstream treating it as privileged.
-        if value not in User.Role.values:
-            raise serializers.ValidationError("Role must be either 'seeker' or 'employer'.")
         return value
 
     def validate(self, attrs):

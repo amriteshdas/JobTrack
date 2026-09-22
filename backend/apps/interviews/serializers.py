@@ -27,7 +27,7 @@ class InterviewSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_applicant_name(self, obj):
+    def get_applicant_name(self, obj) -> str:
         return obj.application.applicant.full_name or obj.application.applicant.email
 
 

@@ -1,5 +1,6 @@
 from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -136,6 +137,12 @@ class CompanyViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("membership_id", int, OpenApiParameter.PATH),
+        ],
+        responses={204: None, 404: None, 409: None},
+    )
     @action(detail=True, methods=["delete"], url_path="members/(?P<membership_id>[^/.]+)")
     def remove_member(self, request, slug=None, membership_id=None):
         company = self.get_object()

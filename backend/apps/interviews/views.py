@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -31,6 +32,10 @@ class ScheduleInterviewView(APIView):
 
     permission_classes = [IsAuthenticated, IsEmployer]
 
+    @extend_schema(
+        request=InterviewCreateSerializer,
+        responses={201: InterviewSerializer, 400: None, 404: None},
+    )
     def post(self, request, application_id):
         application = Application.objects.select_related(
             "job__company", "applicant"
@@ -87,6 +92,7 @@ class MyInterviewsView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=InterviewSerializer(many=True))
     def get(self, request):
         user = request.user
         base = Interview.objects.select_related(
@@ -113,6 +119,10 @@ class InterviewDetailView(APIView):
 
     permission_classes = [IsAuthenticated, IsEmployer]
 
+    @extend_schema(
+        request=InterviewUpdateSerializer,
+        responses={200: InterviewSerializer, 400: None, 404: None},
+    )
     def patch(self, request, pk):
         interview = Interview.objects.select_related("application__job__company").filter(pk=pk).first()
         if interview is None or not _is_company_member(request.user, interview.application.job):

@@ -9,21 +9,21 @@ export default function Pagination({ count, page, onPageChange }) {
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-6">
+    <div className="flex items-center justify-center gap-3 mt-8">
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 disabled:opacity-40 hover:bg-slate-50"
+        className="btn btn-secondary !py-1.5 !px-3 text-xs"
       >
         Previous
       </button>
-      <span className="text-sm text-slate-500">
+      <span className="text-sm text-ink-500 tabular-nums">
         Page {page} of {totalPages}
       </span>
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 disabled:opacity-40 hover:bg-slate-50"
+        className="btn btn-secondary !py-1.5 !px-3 text-xs"
       >
         Next
       </button>

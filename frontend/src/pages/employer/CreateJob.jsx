@@ -25,22 +25,25 @@ export default function CreateJob() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-canvas">
       <Navbar />
       <main className="max-w-2xl mx-auto px-6 py-8">
-        <Link to="/employer" className="text-sm text-slate-500 hover:underline">
+        <Link to="/employer" className="text-sm font-medium text-ink-500 hover:text-violet-700 transition-colors">
           &larr; Back to dashboard
         </Link>
-        <h1 className="mt-2 text-xl font-semibold text-slate-900 mb-6">Post a job</h1>
+        <h1 className="font-display mt-2 text-xl font-extrabold text-ink-950 mb-6">Post a job</h1>
 
-        {companies === null && <p className="text-sm text-slate-400">Loading…</p>}
-
-        {companies?.length === 0 && (
-          <CreateCompanyForm onCreated={() => loadCompanies()} />
+        {companies === null && (
+          <div className="card p-6">
+            <div className="skeleton h-5 w-1/2 mb-3" />
+            <div className="skeleton h-4 w-2/3" />
+          </div>
         )}
 
+        {companies?.length === 0 && <CreateCompanyForm onCreated={() => loadCompanies()} />}
+
         {companies?.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <div className="card p-6 animate-fade-up">
             <JobForm
               companies={companies}
               initial={companies.length === 1 ? { company: companies[0].id } : {}}

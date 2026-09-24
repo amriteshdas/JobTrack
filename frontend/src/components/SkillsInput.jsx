@@ -26,24 +26,23 @@ export default function SkillsInput({ skills, onChange }) {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5 mb-2">
-        {skills.map((name) => (
-          <span
-            key={name}
-            className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 bg-slate-100 rounded-full pl-2.5 pr-1.5 py-1"
-          >
-            {name}
-            <button
-              type="button"
-              onClick={() => removeSkill(name)}
-              className="text-slate-400 hover:text-slate-700"
-              aria-label={`Remove ${name}`}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-      </div>
+      {skills.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2.5">
+          {skills.map((name) => (
+            <span key={name} className="badge animate-pop pr-1.5">
+              {name}
+              <button
+                type="button"
+                onClick={() => removeSkill(name)}
+                className="ml-1 h-4 w-4 rounded-full grid place-items-center text-violet-500 hover:bg-violet-200 hover:text-violet-800 transition-colors"
+                aria-label={`Remove ${name}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       <div className="flex gap-2">
         <input
           type="text"
@@ -51,13 +50,9 @@ export default function SkillsInput({ skills, onChange }) {
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Add a skill and press Enter"
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input flex-1"
         />
-        <button
-          type="button"
-          onClick={addSkill}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
-        >
+        <button type="button" onClick={addSkill} className="btn btn-secondary">
           Add
         </button>
       </div>

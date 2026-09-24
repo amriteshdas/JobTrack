@@ -19,8 +19,11 @@ export default function ProtectedRoute({ children, role }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen grid place-items-center text-slate-400 text-sm">
-        Loading…
+      <div className="min-h-screen grid place-items-center bg-canvas">
+        <div className="flex items-center gap-2.5 text-ink-500 text-sm">
+          <span className="h-4 w-4 rounded-full border-2 border-violet-200 border-t-violet-600 animate-spin" />
+          Loading…
+        </div>
       </div>
     );
   }

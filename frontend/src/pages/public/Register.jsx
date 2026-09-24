@@ -42,42 +42,44 @@ export default function Register() {
 
   const fieldError = (name) =>
     errors[name] && (
-      <p className="mt-1 text-xs text-red-600">
+      <p className="mt-1 text-xs text-red-600 animate-fade-in">
         {Array.isArray(errors[name]) ? errors[name][0] : errors[name]}
       </p>
     );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-slate-900 text-center">
-          Create your JobTrack account
-        </h1>
+    <div className="min-h-screen bg-canvas flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-violet-200/40 blur-3xl" />
+      <div className="absolute -right-32 -bottom-32 h-80 w-80 rounded-full bg-sky-200/40 blur-3xl" />
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4"
-        >
+      <div className="w-full max-w-md relative animate-fade-up">
+        <Link to="/" className="flex items-center justify-center gap-2 mb-1">
+          <span className="grid place-items-center h-9 w-9 rounded-lg bg-gradient-to-br from-violet-500 to-violet-700 text-white font-display font-bold text-sm shadow-soft">
+            JT
+          </span>
+          <span className="font-display font-extrabold text-xl text-ink-950">JobTrack</span>
+        </Link>
+        <h1 className="mt-2 text-sm text-ink-500 text-center">Create your account</h1>
+
+        <form onSubmit={handleSubmit} className="mt-6 card p-6 space-y-4">
           {errors.detail && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 animate-pop">
               {errors.detail}
             </div>
           )}
 
           <div>
-            <span className="block text-sm font-medium text-slate-700 mb-2">
-              I am…
-            </span>
+            <span className="field-label mb-2">I am…</span>
             <div className="grid grid-cols-2 gap-2">
               {ROLES.map((r) => (
                 <button
                   key={r.value}
                   type="button"
                   onClick={() => setForm({ ...form, role: r.value })}
-                  className={`rounded-lg border px-3 py-2.5 text-sm text-left transition ${
+                  className={`rounded-lg border px-3 py-2.5 text-sm font-medium text-left transition-all ${
                     form.role === r.value
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-300 text-slate-700 hover:border-slate-400"
+                      ? "border-violet-600 bg-violet-600 text-white shadow-soft"
+                      : "border-violet-100 text-ink-700 hover:border-violet-300 hover:bg-violet-50"
                   }`}
                 >
                   {r.label}
@@ -89,86 +91,55 @@ export default function Register() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                First name
-              </label>
-              <input
-                name="first_name"
-                value={form.first_name}
-                onChange={update}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
-              />
+              <label className="field-label">First name</label>
+              <input name="first_name" value={form.first_name} onChange={update} className="input" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Last name
-              </label>
-              <input
-                name="last_name"
-                value={form.last_name}
-                onChange={update}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
-              />
+              <label className="field-label">Last name</label>
+              <input name="last_name" value={form.last_name} onChange={update} className="input" />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              required
-              value={form.email}
-              onChange={update}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
-            />
+            <label className="field-label">Email</label>
+            <input type="email" name="email" required value={form.email} onChange={update} className="input" />
             {fieldError("email")}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Password
-            </label>
+            <label className="field-label">Password</label>
             <input
               type="password"
               name="password"
               required
               value={form.password}
               onChange={update}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+              className="input"
             />
             {fieldError("password")}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Confirm password
-            </label>
+            <label className="field-label">Confirm password</label>
             <input
               type="password"
               name="password_confirm"
               required
               value={form.password_confirm}
               onChange={update}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+              className="input"
             />
             {fieldError("password_confirm")}
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-slate-900 text-white text-sm font-medium py-2.5 hover:bg-slate-800 disabled:opacity-50 transition"
-          >
+          <button type="submit" disabled={submitting} className="btn btn-primary w-full">
             {submitting ? "Creating account…" : "Create account"}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
+        <p className="mt-4 text-center text-sm text-ink-500">
           Already have an account?{" "}
-          <Link to="/login" className="text-slate-900 font-medium hover:underline">
+          <Link to="/login" className="text-violet-700 font-semibold hover:text-violet-800">
             Sign in
           </Link>
         </p>

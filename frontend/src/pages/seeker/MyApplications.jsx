@@ -5,13 +5,13 @@ import { applicationsService } from "../../services/applications";
 import { timeAgo } from "../../utils/format";
 
 const STATUS_STYLES = {
-  applied: "bg-slate-100 text-slate-700",
-  under_review: "bg-blue-50 text-blue-700",
-  shortlisted: "bg-amber-50 text-amber-700",
-  interview: "bg-purple-50 text-purple-700",
-  selected: "bg-emerald-50 text-emerald-700",
-  rejected: "bg-red-50 text-red-700",
-  withdrawn: "bg-slate-100 text-slate-400",
+  applied: "badge-neutral",
+  under_review: "badge-sky",
+  shortlisted: "badge-amber",
+  interview: "badge",
+  selected: "badge-green",
+  rejected: "badge-red",
+  withdrawn: "badge-neutral opacity-60",
 };
 
 const STATUS_LABELS = {
@@ -39,44 +39,50 @@ export default function MyApplications() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-canvas">
       <Navbar />
       <main className="max-w-2xl mx-auto px-6 py-8">
-        <h1 className="text-xl font-semibold text-slate-900 mb-6">Your applications</h1>
+        <h1 className="font-display text-xl font-extrabold text-ink-950 mb-6 animate-fade-up">Your applications</h1>
 
-        {applications === null && <p className="text-sm text-slate-400">Loading…</p>}
+        {applications === null && (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="card p-4 h-20">
+                <div className="skeleton h-4 w-1/3 mb-2" />
+                <div className="skeleton h-3 w-1/4" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {applications?.length === 0 && (
-          <p className="text-sm text-slate-400">
-            You haven't applied to anything yet. Browse the marketplace to get started.
-          </p>
+          <div className="card text-center py-14 px-6 animate-fade-in">
+            <p className="text-sm text-ink-500">
+              You haven't applied to anything yet. Browse the marketplace to get started.
+            </p>
+          </div>
         )}
 
         <div className="space-y-3">
-          {applications?.map((app) => (
-            <div key={app.id} className="bg-white border border-slate-200 rounded-xl p-4">
+          {applications?.map((app, i) => (
+            <div key={app.id} style={{ "--reveal-index": i }} className="reveal card p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <Link
-                    to={`/jobs/${app.job.id}`}
-                    className="font-medium text-slate-900 hover:underline"
-                  >
+                  <Link to={`/jobs/${app.job.id}`} className="font-semibold text-ink-950 hover:text-violet-700 transition-colors">
                     {app.job.title}
                   </Link>
-                  <p className="text-sm text-slate-500">{app.job.company_name}</p>
+                  <p className="text-sm text-ink-500">{app.job.company_name}</p>
                 </div>
-                <span
-                  className={`shrink-0 text-xs font-medium rounded-full px-2.5 py-1 ${STATUS_STYLES[app.status]}`}
-                >
+                <span className={`badge ${STATUS_STYLES[app.status]} shrink-0`}>
                   {STATUS_LABELS[app.status]}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-slate-400">Applied {timeAgo(app.applied_at)}</p>
+              <p className="mt-2 text-xs text-ink-500/80">Applied {timeAgo(app.applied_at)}</p>
 
               {!["withdrawn", "rejected", "selected"].includes(app.status) && (
                 <button
                   onClick={() => withdraw(app.id)}
-                  className="mt-2 text-xs text-slate-400 hover:text-red-600"
+                  className="mt-2 text-xs font-medium text-ink-500 hover:text-red-600 transition-colors"
                 >
                   Withdraw application
                 </button>

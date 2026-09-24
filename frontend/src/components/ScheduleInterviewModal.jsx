@@ -43,29 +43,29 @@ export default function ScheduleInterviewModal({ applicationId, onClose, onSched
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-20">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h2 className="text-lg font-semibold text-slate-900">Schedule interview</h2>
+    <div className="fixed inset-0 bg-ink-950/40 backdrop-blur-sm flex items-center justify-center p-4 z-30 animate-fade-in">
+      <div className="card p-6 max-w-md w-full animate-pop shadow-lift">
+        <h2 className="font-display text-lg font-bold text-ink-950">Schedule interview</h2>
 
         <form onSubmit={submit} className="mt-4 space-y-4">
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 animate-pop">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+            <label className="field-label">Type</label>
             <div className="grid grid-cols-3 gap-2">
               {TYPES.map((t) => (
                 <button
                   key={t.value}
                   type="button"
                   onClick={() => setType(t.value)}
-                  className={`rounded-lg border px-3 py-2 text-sm transition ${
+                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
                     type === t.value
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-300 text-slate-700 hover:border-slate-400"
+                      ? "border-violet-600 bg-violet-600 text-white shadow-soft"
+                      : "border-violet-100 text-ink-700 hover:border-violet-300 hover:bg-violet-50"
                   }`}
                 >
                   {t.label}
@@ -75,64 +75,56 @@ export default function ScheduleInterviewModal({ applicationId, onClose, onSched
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Date and time</label>
+            <label className="field-label">Date and time</label>
             <input
               type="datetime-local"
               value={scheduledAt}
               onChange={(e) => setScheduledAt(e.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+              className="input"
             />
           </div>
 
           {type === "onsite" ? (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+              <label className="field-label">Location</label>
               <input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Office address"
                 required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+                className="input"
               />
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Meeting link</label>
+              <label className="field-label">Meeting link</label>
               <input
                 type="url"
                 value={meetingLink}
                 onChange={(e) => setMeetingLink(e.target.value)}
                 placeholder="https://..."
                 required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+                className="input"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label>
+            <label className="field-label">Notes (optional)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+              className="input resize-none"
             />
           </div>
 
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-            >
+          <div className="flex gap-2 justify-end pt-1">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
-            >
+            <button type="submit" disabled={submitting} className="btn btn-primary">
               {submitting ? "Scheduling…" : "Schedule"}
             </button>
           </div>

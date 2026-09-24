@@ -39,7 +39,9 @@ export default function SeekerProfile() {
   if (globalError) {
     return (
       <Shell>
-        <p className="text-sm text-red-600">{globalError}</p>
+        <div className="card px-6 py-8">
+          <p className="text-sm text-red-600">{globalError}</p>
+        </div>
       </Shell>
     );
   }
@@ -47,7 +49,15 @@ export default function SeekerProfile() {
   if (!profile) {
     return (
       <Shell>
-        <p className="text-sm text-slate-400">Loading…</p>
+        <div className="card p-5 mb-5">
+          <div className="flex items-start gap-5">
+            <div className="skeleton h-24 w-24 rounded-full shrink-0" />
+            <div className="flex-1">
+              <div className="skeleton h-5 w-1/2 mb-2" />
+              <div className="skeleton h-3.5 w-1/3" />
+            </div>
+          </div>
+        </div>
       </Shell>
     );
   }
@@ -55,7 +65,7 @@ export default function SeekerProfile() {
   return (
     <Shell>
       {message && (
-        <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700">
+        <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-sm text-emerald-700 animate-pop">
           {message}
         </div>
       )}
@@ -142,13 +152,13 @@ function ProfileHeader({ profile, onUpdated, onSaved }) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="block h-24 w-24 rounded-full overflow-hidden bg-slate-100 border border-slate-200"
+            className="block h-24 w-24 rounded-full overflow-hidden bg-gradient-to-br from-violet-100 to-sky-100 border border-violet-100 shadow-soft transition-transform group-hover:scale-105"
             title="Change profile photo"
           >
             {profile.profile_photo ? (
               <img src={profile.profile_photo} alt="" className="h-full w-full object-cover" />
             ) : (
-              <span className="h-full w-full flex items-center justify-center text-2xl font-semibold text-slate-400">
+              <span className="h-full w-full flex items-center justify-center text-2xl font-display font-bold text-violet-500">
                 {(profile.full_name || profile.email)[0]?.toUpperCase()}
               </span>
             )}
@@ -157,7 +167,7 @@ function ProfileHeader({ profile, onUpdated, onSaved }) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingPhoto}
-            className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs hover:bg-slate-800 disabled:opacity-50 border-2 border-white"
+            className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 text-white flex items-center justify-center text-xs hover:brightness-110 disabled:opacity-50 border-2 border-white shadow-soft transition-transform hover:scale-110"
             title="Change profile photo"
           >
             {uploadingPhoto ? "…" : "\u270E"}
@@ -176,13 +186,13 @@ function ProfileHeader({ profile, onUpdated, onSaved }) {
             <>
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h1 className="text-xl font-semibold text-slate-900">{profile.full_name || profile.email}</h1>
-                  {profile.headline && <p className="text-sm text-slate-600 mt-0.5">{profile.headline}</p>}
-                  {profile.location && <p className="text-sm text-slate-400 mt-0.5">{profile.location}</p>}
+                  <h1 className="text-xl font-semibold text-ink-950">{profile.full_name || profile.email}</h1>
+                  {profile.headline && <p className="text-sm text-ink-700 mt-0.5">{profile.headline}</p>}
+                  {profile.location && <p className="text-sm text-ink-500 mt-0.5">{profile.location}</p>}
                 </div>
                 <button
                   onClick={startEdit}
-                  className="shrink-0 text-sm text-slate-500 hover:text-slate-900 hover:underline"
+                  className="shrink-0 text-sm font-medium text-violet-600 hover:text-violet-800"
                 >
                   Edit
                 </button>
@@ -196,7 +206,7 @@ function ProfileHeader({ profile, onUpdated, onSaved }) {
                       href={l.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
+                      className="text-sm font-medium text-violet-600 hover:text-violet-800"
                     >
                       {l.label}
                     </a>
@@ -204,7 +214,7 @@ function ProfileHeader({ profile, onUpdated, onSaved }) {
                 </div>
               )}
 
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-500">
                 <span>{profile.years_of_experience} yr{profile.years_of_experience === 1 ? "" : "s"} experience</span>
                 {profile.expected_salary && (
                   <span>Expected: ₹{(profile.expected_salary / 100000).toFixed(1)}L</span>
@@ -275,14 +285,14 @@ function ProfileHeader({ profile, onUpdated, onSaved }) {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+                  className="btn btn-primary"
                 >
                   {saving ? "Saving…" : "Save"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditing(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  className="btn btn-secondary"
                 >
                   Cancel
                 </button>
@@ -321,9 +331,9 @@ function AboutCard({ profile, onUpdated, onSaved }) {
     <Card title="About" onEdit={!editing ? () => { setBio(profile.bio || ""); setEditing(true); } : undefined}>
       {!editing ? (
         profile.bio ? (
-          <p className="text-sm text-slate-600 whitespace-pre-line">{profile.bio}</p>
+          <p className="text-sm text-ink-700 whitespace-pre-line">{profile.bio}</p>
         ) : (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-ink-500">
             Tell employers a bit about yourself -- click Edit to add a summary.
           </p>
         )
@@ -340,14 +350,14 @@ function AboutCard({ profile, onUpdated, onSaved }) {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+              className="btn btn-primary"
             >
               {saving ? "Saving…" : "Save"}
             </button>
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+              className="btn btn-secondary"
             >
               Cancel
             </button>
@@ -383,9 +393,9 @@ function ResumeCard({ profile, onUpdated, onSaved }) {
 
   return (
     <Card title="Resume">
-      <p className="text-sm text-slate-500 mb-2">
+      <p className="text-sm text-ink-500 mb-2">
         {profile.resume ? (
-          <a href={profile.resume} target="_blank" rel="noreferrer" className="text-slate-900 hover:underline">
+          <a href={profile.resume} target="_blank" rel="noreferrer" className="text-violet-700 font-semibold hover:text-violet-800">
             View current resume
           </a>
         ) : (
@@ -396,7 +406,7 @@ function ResumeCard({ profile, onUpdated, onSaved }) {
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+          className="btn btn-secondary !py-1.5 !px-3 text-xs"
         >
           {profile.resume ? "Change resume" : "Upload resume"}
         </button>
@@ -491,7 +501,7 @@ function EducationCard({ profile, onReload, onSaved }) {
     <Card title="Education" onEdit={!adding ? startAdd : undefined} editLabel="+ Add">
       <div className="space-y-2">
         {profile.education.length === 0 && !adding && (
-          <p className="text-sm text-slate-400">No education added yet.</p>
+          <p className="text-sm text-ink-500">No education added yet.</p>
         )}
         {profile.education.map((edu) =>
           editingId === edu.id ? (
@@ -511,22 +521,22 @@ function EducationCard({ profile, onReload, onSaved }) {
           ) : (
             <div
               key={edu.id}
-              className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2"
+              className="flex items-center justify-between border border-violet-50 rounded-lg px-3 py-2.5 hover:bg-violet-50/40 transition-colors"
             >
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-ink-950">
                   {edu.degree}
                   {edu.field_of_study && ` in ${edu.field_of_study}`} · {edu.institution}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-ink-500">
                   {edu.start_date} — {edu.end_date || "Present"}
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <button onClick={() => startEdit(edu)} className="text-xs text-slate-500 hover:text-slate-900">
+                <button onClick={() => startEdit(edu)} className="text-xs font-medium text-violet-600 hover:text-violet-800">
                   Edit
                 </button>
-                <button onClick={() => remove(edu.id)} className="text-xs text-slate-400 hover:text-red-600">
+                <button onClick={() => remove(edu.id)} className="text-xs font-medium text-ink-500 hover:text-red-600">
                   Remove
                 </button>
               </div>
@@ -612,7 +622,7 @@ function ExperienceCard({ profile, onReload, onSaved }) {
     <Card title="Experience" onEdit={!adding ? startAdd : undefined} editLabel="+ Add">
       <div className="space-y-2">
         {profile.experience.length === 0 && !adding && (
-          <p className="text-sm text-slate-400">No experience added yet.</p>
+          <p className="text-sm text-ink-500">No experience added yet.</p>
         )}
         {profile.experience.map((exp) =>
           editingId === exp.id ? (
@@ -632,22 +642,22 @@ function ExperienceCard({ profile, onReload, onSaved }) {
           ) : (
             <div
               key={exp.id}
-              className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2"
+              className="flex items-center justify-between border border-violet-50 rounded-lg px-3 py-2.5 hover:bg-violet-50/40 transition-colors"
             >
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-ink-950">
                   {exp.title} · {exp.company_name}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-ink-500">
                   {exp.start_date} — {exp.is_current ? "Present" : exp.end_date}
                 </p>
-                {exp.description && <p className="text-sm text-slate-500 mt-0.5">{exp.description}</p>}
+                {exp.description && <p className="text-sm text-ink-500 mt-0.5">{exp.description}</p>}
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <button onClick={() => startEdit(exp)} className="text-xs text-slate-500 hover:text-slate-900">
+                <button onClick={() => startEdit(exp)} className="text-xs font-medium text-violet-600 hover:text-violet-800">
                   Edit
                 </button>
-                <button onClick={() => remove(exp.id)} className="text-xs text-slate-400 hover:text-red-600">
+                <button onClick={() => remove(exp.id)} className="text-xs font-medium text-ink-500 hover:text-red-600">
                   Remove
                 </button>
               </div>
@@ -676,7 +686,7 @@ function ExperienceCard({ profile, onReload, onSaved }) {
 /** Shared mini-form for one education or experience entry (add or edit). */
 function EntryForm({ fields, form, setForm, onSubmit, onCancel, error }) {
   return (
-    <form onSubmit={onSubmit} className="border border-slate-200 rounded-lg p-3 space-y-2 bg-slate-50">
+    <form onSubmit={onSubmit} className="border border-violet-100 rounded-xl p-3.5 space-y-2.5 bg-violet-50/40 animate-pop">
       {error && <p className="text-xs text-red-600">{error}</p>}
       {fields.map((f) =>
         f.textarea ? (
@@ -718,14 +728,14 @@ function EntryForm({ fields, form, setForm, onSubmit, onCancel, error }) {
       <div className="flex gap-2">
         <button
           type="submit"
-          className="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-sm font-medium hover:bg-slate-800"
+          className="btn btn-primary !py-1.5 !px-3 text-xs"
         >
           Save
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+          className="btn btn-secondary !py-1.5 !px-3 text-xs"
         >
           Cancel
         </button>
@@ -736,22 +746,21 @@ function EntryForm({ fields, form, setForm, onSubmit, onCancel, error }) {
 
 function Shell({ children }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-canvas">
       <Navbar />
       <main className="max-w-2xl mx-auto px-6 py-8">{children}</main>
-      <style>{`.input { width: 100%; border: 1px solid rgb(203 213 225); border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; } .input:focus { outline: none; border-color: rgb(148 163 184); }`}</style>
     </div>
   );
 }
 
 function Card({ title, children, onEdit, editLabel = "Edit" }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-5">
+    <div className="bg-white border border-violet-100 rounded-2xl p-5 mb-5">
       {title && (
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+          <h2 className="text-sm font-semibold text-ink-950">{title}</h2>
           {onEdit && (
-            <button onClick={onEdit} className="text-sm text-slate-500 hover:text-slate-900 hover:underline">
+            <button onClick={onEdit} className="text-sm font-medium text-violet-600 hover:text-violet-800">
               {editLabel}
             </button>
           )}
@@ -765,9 +774,9 @@ function Card({ title, children, onEdit, editLabel = "Edit" }) {
 function Field({ label, error, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <label className="field-label">{label}</label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-600 animate-fade-in">{error}</p>}
     </div>
   );
 }

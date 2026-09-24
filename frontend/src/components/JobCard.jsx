@@ -1,40 +1,38 @@
 import { Link } from "react-router-dom";
 import { formatEmploymentType, formatSalary, formatWorkMode, timeAgo } from "../utils/format";
 
-export default function JobCard({ job }) {
+export default function JobCard({ job, index = 0 }) {
   const salary = formatSalary(job.salary_min, job.salary_max);
 
   return (
     <Link
       to={`/jobs/${job.id}`}
-      className="block bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 hover:shadow-sm transition"
+      style={{ "--reveal-index": index }}
+      className="reveal card card-hover group block p-5"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="font-semibold text-slate-900 truncate">{job.title}</h3>
-          <p className="mt-0.5 text-sm text-slate-500 truncate">
+          <h3 className="font-display font-bold text-ink-950 truncate group-hover:text-violet-700 transition-colors">
+            {job.title}
+          </h3>
+          <p className="mt-1 text-sm text-ink-500 truncate">
             {job.company_name} · {job.location}
           </p>
         </div>
-        <span className="shrink-0 text-xs text-slate-400">{timeAgo(job.published_at)}</span>
+        <span className="shrink-0 text-xs text-ink-500/70 mt-0.5">{timeAgo(job.published_at)}</span>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-3.5 flex flex-wrap gap-1.5">
         <Tag>{formatWorkMode(job.work_mode)}</Tag>
         <Tag>{formatEmploymentType(job.employment_type)}</Tag>
-        {salary && <Tag>{salary}</Tag>}
-        {job.experience_required > 0 && (
-          <Tag>{job.experience_required}+ yrs</Tag>
-        )}
+        {salary && <Tag accent>{salary}</Tag>}
+        {job.experience_required > 0 && <Tag>{job.experience_required}+ yrs</Tag>}
       </div>
 
       {job.skills?.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {job.skills.slice(0, 5).map((skill) => (
-            <span
-              key={skill.id}
-              className="text-xs text-slate-500 bg-slate-50 rounded px-2 py-0.5"
-            >
+            <span key={skill.id} className="text-xs text-ink-500 bg-violet-50/60 rounded-md px-2 py-0.5">
               {skill.name}
             </span>
           ))}
@@ -44,10 +42,6 @@ export default function JobCard({ job }) {
   );
 }
 
-function Tag({ children }) {
-  return (
-    <span className="text-xs font-medium text-slate-600 bg-slate-100 rounded-full px-2.5 py-1">
-      {children}
-    </span>
-  );
+function Tag({ children, accent }) {
+  return <span className={`badge ${accent ? "badge-sky" : "badge-neutral"}`}>{children}</span>;
 }

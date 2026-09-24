@@ -62,30 +62,45 @@ export default function JobApplicants() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-violet-50/60">
       <Navbar />
       <main className="max-w-3xl mx-auto px-6 py-8">
-        <Link to="/employer" className="text-sm text-slate-500 hover:underline">
+        <Link to="/employer" className="text-sm font-medium text-ink-500 hover:text-violet-700 transition-colors">
           &larr; Back to dashboard
         </Link>
         <div className="flex items-center justify-between">
-          <h1 className="mt-2 text-xl font-semibold text-slate-900">Applicants</h1>
+          <h1 className="font-display mt-2 text-xl font-extrabold text-ink-950">Applicants</h1>
           <Link
             to={`/employer/jobs/${jobId}/edit`}
-            className="text-sm text-slate-600 hover:underline"
+            className="text-sm font-medium text-violet-600 hover:text-violet-800 transition-colors"
           >
             Edit job
           </Link>
         </div>
 
-        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-        {applications === null && !error && <p className="mt-4 text-sm text-slate-400">Loading…</p>}
+        {error && (
+          <div className="mt-4 card px-4 py-3">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+        {applications === null && !error && (
+          <div className="mt-4 space-y-3">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="card p-4 h-24">
+                <div className="skeleton h-4 w-1/3 mb-2" />
+                <div className="skeleton h-3 w-1/2" />
+              </div>
+            ))}
+          </div>
+        )}
         {applications?.length === 0 && (
-          <p className="mt-4 text-sm text-slate-400">No applications yet for this job.</p>
+          <div className="mt-4 card text-center py-14 px-6 animate-fade-in">
+            <p className="text-sm text-ink-500">No applications yet for this job.</p>
+          </div>
         )}
 
         <div className="mt-4 space-y-3">
-          {applications?.map((app) => {
+          {applications?.map((app, idx) => {
             const a = app.applicant;
             const isExpanded = expanded.has(app.id);
             const links = [
@@ -95,32 +110,32 @@ export default function JobApplicants() {
             ].filter(Boolean);
 
             return (
-              <div key={app.id} className="bg-white border border-slate-200 rounded-xl p-4">
+              <div key={app.id} style={{ "--reveal-index": idx }} className="reveal card p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 min-w-0">
                     {a.profile_photo ? (
                       <img
                         src={a.profile_photo}
                         alt=""
-                        className="h-11 w-11 rounded-full object-cover border border-slate-100 shrink-0"
+                        className="h-11 w-11 rounded-full object-cover border border-violet-100 shrink-0"
                       />
                     ) : (
-                      <div className="h-11 w-11 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-sm font-semibold shrink-0">
+                      <div className="h-11 w-11 rounded-full bg-gradient-to-br from-violet-100 to-sky-100 flex items-center justify-center text-violet-600 text-sm font-display font-bold shrink-0">
                         {(a.full_name || a.email)[0]?.toUpperCase()}
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="font-medium text-slate-900">{a.full_name || a.email}</p>
-                      <p className="text-sm text-slate-500">{a.email}</p>
-                      {a.headline && <p className="text-sm text-slate-500 mt-0.5">{a.headline}</p>}
+                      <p className="font-medium text-ink-950">{a.full_name || a.email}</p>
+                      <p className="text-sm text-ink-500">{a.email}</p>
+                      {a.headline && <p className="text-sm text-ink-500 mt-0.5">{a.headline}</p>}
                       {(a.location || a.phone) && (
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-ink-500 mt-0.5">
                           {[a.location, a.phone].filter(Boolean).join(" · ")}
                         </p>
                       )}
                     </div>
                   </div>
-                  <span className="shrink-0 text-xs text-slate-400">{timeAgo(app.applied_at)}</span>
+                  <span className="shrink-0 text-xs text-ink-500">{timeAgo(app.applied_at)}</span>
                 </div>
 
                 {links.length > 0 && (
@@ -131,7 +146,7 @@ export default function JobApplicants() {
                         href={l.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-slate-500 hover:text-slate-900 hover:underline"
+                        className="text-xs text-ink-500 hover:text-ink-950 hover:underline"
                       >
                         {l.label}
                       </a>
@@ -142,7 +157,7 @@ export default function JobApplicants() {
                 {a.skills?.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {a.skills.map((skill) => (
-                      <span key={skill} className="text-xs text-slate-500 bg-slate-50 rounded px-2 py-0.5">
+                      <span key={skill} className="text-xs text-ink-500 bg-violet-50/60 rounded-md px-2 py-0.5">
                         {skill}
                       </span>
                     ))}
@@ -150,33 +165,33 @@ export default function JobApplicants() {
                 )}
 
                 {app.cover_letter && (
-                  <p className="mt-3 text-sm text-slate-600 whitespace-pre-line">{app.cover_letter}</p>
+                  <p className="mt-3 text-sm text-ink-700 whitespace-pre-line">{app.cover_letter}</p>
                 )}
 
                 <button
                   onClick={() => toggleExpanded(app.id)}
-                  className="mt-3 text-sm text-slate-600 hover:text-slate-900 hover:underline"
+                  className="mt-3 text-sm text-ink-700 hover:text-ink-950 hover:underline"
                 >
                   {isExpanded ? "Hide full profile" : "View full profile"}
                 </button>
 
                 {isExpanded && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 space-y-3">
+                  <div className="mt-3 pt-3 border-t border-violet-50 space-y-3">
                     {a.bio && (
                       <div>
-                        <p className="text-xs font-semibold text-slate-700 mb-1">About</p>
-                        <p className="text-sm text-slate-600 whitespace-pre-line">{a.bio}</p>
+                        <p className="text-xs font-semibold text-ink-700 mb-1">About</p>
+                        <p className="text-sm text-ink-700 whitespace-pre-line">{a.bio}</p>
                       </div>
                     )}
 
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      <p className="text-slate-500">
-                        <span className="text-slate-400">Experience:</span>{" "}
+                      <p className="text-ink-500">
+                        <span className="text-ink-500">Experience:</span>{" "}
                         {a.years_of_experience} yr{a.years_of_experience === 1 ? "" : "s"}
                       </p>
                       {a.expected_salary && (
-                        <p className="text-slate-500">
-                          <span className="text-slate-400">Expected salary:</span>{" "}
+                        <p className="text-ink-500">
+                          <span className="text-ink-500">Expected salary:</span>{" "}
                           ₹{(a.expected_salary / 100000).toFixed(1)}L
                         </p>
                       )}
@@ -184,15 +199,15 @@ export default function JobApplicants() {
 
                     {a.education?.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-slate-700 mb-1">Education</p>
+                        <p className="text-xs font-semibold text-ink-700 mb-1">Education</p>
                         <div className="space-y-1.5">
                           {a.education.map((edu) => (
                             <div key={edu.id} className="text-sm">
-                              <p className="text-slate-700">
+                              <p className="text-ink-700">
                                 {edu.degree}
                                 {edu.field_of_study && ` in ${edu.field_of_study}`} · {edu.institution}
                               </p>
-                              <p className="text-xs text-slate-400">
+                              <p className="text-xs text-ink-500">
                                 {edu.start_date} — {edu.end_date || "Present"}
                               </p>
                             </div>
@@ -203,18 +218,18 @@ export default function JobApplicants() {
 
                     {a.experience?.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-slate-700 mb-1">Experience</p>
+                        <p className="text-xs font-semibold text-ink-700 mb-1">Experience</p>
                         <div className="space-y-1.5">
                           {a.experience.map((exp) => (
                             <div key={exp.id} className="text-sm">
-                              <p className="text-slate-700">
+                              <p className="text-ink-700">
                                 {exp.title} · {exp.company_name}
                               </p>
-                              <p className="text-xs text-slate-400">
+                              <p className="text-xs text-ink-500">
                                 {exp.start_date} — {exp.is_current ? "Present" : exp.end_date}
                               </p>
                               {exp.description && (
-                                <p className="text-sm text-slate-500 mt-0.5">{exp.description}</p>
+                                <p className="text-sm text-ink-500 mt-0.5">{exp.description}</p>
                               )}
                             </div>
                           ))}
@@ -223,7 +238,7 @@ export default function JobApplicants() {
                     )}
 
                     {a.education?.length === 0 && a.experience?.length === 0 && !a.bio && (
-                      <p className="text-sm text-slate-400">
+                      <p className="text-sm text-ink-500">
                         This candidate hasn't filled in education or experience yet.
                       </p>
                     )}
@@ -235,7 +250,7 @@ export default function JobApplicants() {
                     href={app.resume}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-sm text-slate-900 font-medium hover:underline"
+                    className="text-sm text-ink-950 font-medium hover:underline"
                   >
                     View resume
                   </a>
@@ -243,19 +258,19 @@ export default function JobApplicants() {
                   {app.status !== "withdrawn" && (
                     <button
                       onClick={() => setSchedulingFor(app.id)}
-                      className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
+                      className="text-sm text-ink-700 hover:text-ink-950 hover:underline"
                     >
                       Schedule interview
                     </button>
                   )}
 
                   {app.status === "withdrawn" ? (
-                    <span className="text-xs text-slate-400 ml-auto">Withdrawn by candidate</span>
+                    <span className="text-xs text-ink-500 ml-auto">Withdrawn by candidate</span>
                   ) : (
                     <select
                       value={app.status}
                       onChange={(e) => changeStatus(app.id, e.target.value)}
-                      className="ml-auto text-sm border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none"
+                      className="ml-auto text-sm border border-violet-100 rounded-lg px-2 py-1.5 focus:outline-none"
                     >
                       <option value={app.status} disabled hidden>
                         {STATUS_LABELS[app.status]}

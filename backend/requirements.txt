@@ -7,6 +7,6 @@ django-environ==0.14.0
 pytest==9.1.1
 pytest-django==4.14.0
 Pillow==12.3.0
-django-filter==26.1
-drf-spectacular==0.30.0
-pytest-cov==7.1.0
+django-filter==26
+gunicorn
+whitenoise

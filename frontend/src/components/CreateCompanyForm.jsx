@@ -27,16 +27,16 @@ export default function CreateCompanyForm({ onCreated }) {
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6">
-      <h2 className="text-base font-semibold text-slate-900">Set up your company first</h2>
-      <p className="mt-1 text-sm text-slate-500">
+    <div className="card p-6 animate-fade-up">
+      <h2 className="font-display text-base font-bold text-ink-950">Set up your company first</h2>
+      <p className="mt-1 text-sm text-ink-500">
         You need a company before you can post a job. This only takes a moment -- you can add
         more details later.
       </p>
 
-      <form onSubmit={submit} className="mt-4 space-y-3">
+      <form onSubmit={submit} className="mt-5 space-y-3">
         {error && (
-          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 animate-pop">
             {error}
           </div>
         )}
@@ -45,25 +45,21 @@ export default function CreateCompanyForm({ onCreated }) {
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="Company name"
           required
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input"
         />
         <input
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
           placeholder="Location (optional)"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input"
         />
         <input
           value={form.industry}
           onChange={(e) => setForm({ ...form, industry: e.target.value })}
           placeholder="Industry (optional)"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input"
         />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
-        >
+        <button type="submit" disabled={submitting} className="btn btn-primary">
           {submitting ? "Creating…" : "Create company"}
         </button>
       </form>

@@ -31,14 +31,17 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white border border-red-200 rounded-2xl p-6">
-            <h1 className="text-lg font-semibold text-slate-900">Something went wrong</h1>
-            <p className="mt-2 text-sm text-slate-600">
+        <div className="min-h-screen bg-canvas flex items-center justify-center p-6">
+          <div className="max-w-md w-full card p-7 animate-pop">
+            <div className="h-10 w-10 rounded-xl bg-red-50 border border-red-200 grid place-items-center text-red-600 mb-3">
+              !
+            </div>
+            <h1 className="font-display text-lg font-bold text-ink-950">Something went wrong</h1>
+            <p className="mt-2 text-sm text-ink-500">
               This page hit an error and couldn't render. The details below are also in your
               browser's console (F12 → Console tab).
             </p>
-            <pre className="mt-4 text-xs text-red-700 bg-red-50 rounded-lg p-3 overflow-auto max-h-48 whitespace-pre-wrap">
+            <pre className="mt-4 text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg p-3 overflow-auto max-h-48 whitespace-pre-wrap">
               {String(this.state.error?.message || this.state.error)}
             </pre>
             <button
@@ -46,7 +49,7 @@ export default class ErrorBoundary extends Component {
                 this.setState({ error: null });
                 window.location.href = "/";
               }}
-              className="mt-4 rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800"
+              className="btn btn-primary mt-5 w-full"
             >
               Back to home
             </button>

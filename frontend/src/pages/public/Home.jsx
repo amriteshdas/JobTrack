@@ -55,44 +55,59 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-canvas">
       <Navbar />
 
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <h1 className="text-2xl font-semibold text-slate-900">
+      <div className="relative overflow-hidden border-b border-violet-100/70">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-canvas to-sky-50" />
+        <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-violet-200/40 blur-3xl" />
+        <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-sky-200/40 blur-3xl" />
+
+        <div className="relative max-w-6xl mx-auto px-6 py-14 sm:py-16">
+          <p className="badge mb-4 animate-fade-up">Hiring, made simple</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-ink-950 max-w-xl animate-fade-up" style={{ animationDelay: "60ms" }}>
             Find your next role
           </h1>
-          <form onSubmit={submitSearch} className="mt-4 flex gap-2 max-w-2xl">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Job title, skill, or company"
-              className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:border-slate-400"
-            />
-            <button
-              type="submit"
-              className="rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-slate-800"
-            >
+          <p className="mt-2 text-ink-500 max-w-md animate-fade-up" style={{ animationDelay: "100ms" }}>
+            Search open positions from companies that are actively hiring right now.
+          </p>
+          <form
+            onSubmit={submitSearch}
+            className="mt-6 flex gap-2 max-w-2xl animate-fade-up"
+            style={{ animationDelay: "140ms" }}
+          >
+            <div className="relative flex-1">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500/60" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Job title, skill, or company"
+                className="input pl-10 !py-3 shadow-soft"
+              />
+            </div>
+            <button type="submit" className="btn btn-primary !px-6">
               Search
             </button>
           </form>
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-6 py-8 flex flex-col lg:flex-row gap-8">
+      <main className="max-w-6xl mx-auto px-6 py-10 flex flex-col lg:flex-row gap-8">
         <FilterSidebar filters={filters} onChange={setFilters} />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-ink-500">
               {loading ? "Searching…" : `${data.count} job${data.count === 1 ? "" : "s"} found`}
             </p>
             <select
               value={filters.ordering || "-published_at"}
               onChange={(e) => setFilters({ ...filters, ordering: e.target.value })}
-              className="text-sm border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none"
+              className="text-sm border border-violet-100 bg-white rounded-lg px-2.5 py-1.5 text-ink-700 focus:outline-none focus:border-violet-400"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -103,22 +118,41 @@ export default function Home() {
           </div>
 
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 animate-pop">
               {error}
             </div>
           )}
 
-          {!error && !loading && data.results.length === 0 && (
-            <div className="text-center py-16 text-slate-400 text-sm">
-              No jobs match these filters. Try widening your search.
+          {loading && (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="card p-5 h-[104px]">
+                  <div className="skeleton h-4 w-1/3 mb-3" />
+                  <div className="skeleton h-3 w-1/2" />
+                </div>
+              ))}
             </div>
           )}
 
-          <div className="space-y-3">
-            {data.results.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
+          {!error && !loading && data.results.length === 0 && (
+            <div className="text-center py-16 animate-fade-in">
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-violet-50 grid place-items-center text-violet-400 mb-3">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </div>
+              <p className="text-ink-500 text-sm">No jobs match these filters. Try widening your search.</p>
+            </div>
+          )}
+
+          {!loading && (
+            <div className="space-y-3">
+              {data.results.map((job, i) => (
+                <JobCard key={job.id} job={job} index={i} />
+              ))}
+            </div>
+          )}
 
           <Pagination count={data.count} page={page} onPageChange={setPage} />
         </div>

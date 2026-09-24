@@ -66,7 +66,7 @@ export default function JobForm({ companies, initial, onSubmit, submitLabel }) {
 
   const fieldError = (name) =>
     errors[name] && (
-      <p className="mt-1 text-xs text-red-600">
+      <p className="mt-1 text-xs text-red-600 animate-fade-in">
         {Array.isArray(errors[name]) ? errors[name][0] : errors[name]}
       </p>
     );
@@ -74,18 +74,18 @@ export default function JobForm({ companies, initial, onSubmit, submitLabel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {errors.detail && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 animate-pop">
           {errors.detail}
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Company</label>
+        <label className="field-label">Company</label>
         <select
           value={form.company}
           onChange={(e) => set("company", e.target.value)}
           required
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input"
         >
           <option value="" disabled>
             Select a company…
@@ -100,31 +100,31 @@ export default function JobForm({ companies, initial, onSubmit, submitLabel }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Job title</label>
+        <label className="field-label">Job title</label>
         <input
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
           required
           placeholder="e.g. Backend Engineer"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input"
         />
         {fieldError("title")}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
+          <label className="field-label">Location</label>
           <input
             value={form.location}
             onChange={(e) => set("location", e.target.value)}
             required
             placeholder="e.g. Kolkata"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+            className="input"
           />
           {fieldError("location")}
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="field-label">
             Experience required (years)
           </label>
           <input
@@ -132,18 +132,18 @@ export default function JobForm({ companies, initial, onSubmit, submitLabel }) {
             min="0"
             value={form.experience_required}
             onChange={(e) => set("experience_required", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+            className="input"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Work mode</label>
+          <label className="field-label">Work mode</label>
           <select
             value={form.work_mode}
             onChange={(e) => set("work_mode", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+            className="input"
           >
             {WORK_MODES.map((m) => (
               <option key={m.value} value={m.value}>
@@ -153,11 +153,11 @@ export default function JobForm({ companies, initial, onSubmit, submitLabel }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Employment type</label>
+          <label className="field-label">Employment type</label>
           <select
             value={form.employment_type}
             onChange={(e) => set("employment_type", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+            className="input"
           >
             {EMPLOYMENT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
@@ -170,7 +170,7 @@ export default function JobForm({ companies, initial, onSubmit, submitLabel }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="field-label">
             Salary min (optional)
           </label>
           <input
@@ -178,11 +178,11 @@ export default function JobForm({ companies, initial, onSubmit, submitLabel }) {
             min="0"
             value={form.salary_min}
             onChange={(e) => set("salary_min", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+            className="input"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label className="field-label">
             Salary max (optional)
           </label>
           <input
@@ -190,83 +190,79 @@ export default function JobForm({ companies, initial, onSubmit, submitLabel }) {
             min="0"
             value={form.salary_max}
             onChange={(e) => set("salary_max", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+            className="input"
           />
           {fieldError("salary_max")}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label className="field-label">
           Application deadline (optional)
         </label>
         <input
           type="date"
           value={form.application_deadline || ""}
           onChange={(e) => set("application_deadline", e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input"
         />
         {fieldError("application_deadline")}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Skills</label>
+        <label className="field-label">Skills</label>
         <SkillsInput skills={form.skills} onChange={(skills) => set("skills", skills)} />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+        <label className="field-label">Description</label>
         <textarea
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
           rows={5}
           required
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input resize-none"
         />
         {fieldError("description")}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label className="field-label">
           Responsibilities (optional)
         </label>
         <textarea
           value={form.responsibilities}
           onChange={(e) => set("responsibilities", e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input resize-none"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label className="field-label">
           Qualifications (optional)
         </label>
         <textarea
           value={form.qualifications}
           onChange={(e) => set("qualifications", e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input resize-none"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label className="field-label">
           Benefits (optional)
         </label>
         <textarea
           value={form.benefits}
           onChange={(e) => set("benefits", e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+          className="input resize-none"
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
-      >
+      <button type="submit" disabled={submitting} className="btn btn-primary">
         {submitting ? "Saving…" : submitLabel}
       </button>
     </form>

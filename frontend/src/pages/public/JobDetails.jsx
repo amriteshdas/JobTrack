@@ -106,7 +106,18 @@ export default function JobDetails() {
   if (status === "loading") {
     return (
       <Shell>
-        <p className="text-sm text-slate-400">Loading…</p>
+        <div className="card p-6 md:p-8">
+          <div className="skeleton h-6 w-2/3 mb-3" />
+          <div className="skeleton h-4 w-1/3 mb-6" />
+          <div className="flex gap-2 mb-6">
+            <div className="skeleton h-6 w-20 rounded-full" />
+            <div className="skeleton h-6 w-24 rounded-full" />
+            <div className="skeleton h-6 w-16 rounded-full" />
+          </div>
+          <div className="skeleton h-4 w-full mb-2" />
+          <div className="skeleton h-4 w-5/6 mb-2" />
+          <div className="skeleton h-4 w-2/3" />
+        </div>
       </Shell>
     );
   }
@@ -114,13 +125,13 @@ export default function JobDetails() {
   if (status === "not_found") {
     return (
       <Shell>
-        <div className="text-center py-16">
-          <p className="text-slate-500">
+        <div className="card text-center py-16 px-6 animate-fade-in">
+          <p className="text-ink-500">
             This job doesn't exist or is no longer available.
           </p>
           <button
             onClick={() => navigate("/")}
-            className="mt-3 text-sm text-slate-900 font-medium hover:underline"
+            className="mt-3 text-sm text-violet-700 font-semibold hover:text-violet-800"
           >
             Back to job search
           </button>
@@ -132,7 +143,9 @@ export default function JobDetails() {
   if (status === "error") {
     return (
       <Shell>
-        <p className="text-sm text-red-600">Could not load this job. Please try again.</p>
+        <div className="card px-6 py-8">
+          <p className="text-sm text-red-600">Could not load this job. Please try again.</p>
+        </div>
       </Shell>
     );
   }
@@ -141,18 +154,18 @@ export default function JobDetails() {
 
   return (
     <Shell>
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8">
+      <div className="card p-6 md:p-8 animate-fade-up">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">{job.title}</h1>
+            <h1 className="font-display text-2xl font-extrabold text-ink-950">{job.title}</h1>
             <Link
               to={`/companies/${job.company_slug}`}
-              className="mt-1 inline-block text-sm text-slate-500 hover:text-slate-900 hover:underline"
+              className="mt-1.5 inline-block text-sm text-ink-500 hover:text-violet-700 transition-colors"
             >
               {job.company_name}
             </Link>
           </div>
-          <span className="shrink-0 text-xs text-slate-400">{timeAgo(job.published_at)}</span>
+          <span className="shrink-0 text-xs text-ink-500/70">{timeAgo(job.published_at)}</span>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-1.5">
@@ -163,27 +176,22 @@ export default function JobDetails() {
           {job.experience_required > 0 && <Tag>{job.experience_required}+ yrs experience</Tag>}
         </div>
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           {!isAuthenticated && (
-            <Link
-              to="/login"
-              className="rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-slate-800"
-            >
+            <Link to="/login" className="btn btn-primary">
               Sign in to apply
             </Link>
           )}
           {isAuthenticated && isJobSeeker && (
             <>
               {applied ? (
-                <span className="rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 px-5 py-2.5 text-sm font-medium">
-                  Applied ✓
-                </span>
+                <span className="badge-green badge !text-sm !py-2 !px-4">Applied ✓</span>
               ) : (
                 <button
                   onClick={() => setShowApplyModal(true)}
                   disabled={!job.is_open}
                   title={!job.is_open ? "This job is no longer accepting applications" : undefined}
-                  className="rounded-lg bg-slate-900 text-white px-5 py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn btn-primary"
                 >
                   Apply
                 </button>
@@ -191,23 +199,19 @@ export default function JobDetails() {
               <button
                 onClick={toggleSave}
                 disabled={savePending}
-                className={`rounded-lg border px-5 py-2.5 text-sm font-medium transition disabled:opacity-50 ${
-                  saved
-                    ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
-                    : "border-slate-300 text-slate-700 hover:bg-slate-50"
-                }`}
+                className={saved ? "btn !bg-violet-600 !text-white shadow-soft" : "btn btn-secondary"}
               >
                 {saved ? "Saved ✓" : "Save job"}
               </button>
             </>
           )}
           {isAuthenticated && isEmployer && (
-            <p className="text-sm text-slate-400 self-center">
+            <p className="text-sm text-ink-500 self-center">
               Signed in as an employer — switch to a job seeker account to apply.
             </p>
           )}
           {!job.is_open && (
-            <p className="text-sm text-amber-600 self-center">
+            <p className="text-sm text-amber-600 self-center font-medium">
               This job is no longer accepting applications.
             </p>
           )}
@@ -219,8 +223,8 @@ export default function JobDetails() {
         <Section title="Benefits" text={job.benefits} />
 
         {job.skills?.length > 0 && (
-          <div className="mt-6">
-            <h2 className="text-sm font-semibold text-slate-900 mb-2">Skills</h2>
+          <div className="mt-6 pt-6 border-t border-violet-50">
+            <h2 className="font-display text-sm font-bold text-ink-950 mb-2">Skills</h2>
             <div className="flex flex-wrap gap-1.5">
               {job.skills.map((s) => (
                 <Tag key={s.id}>{s.name}</Tag>
@@ -230,7 +234,7 @@ export default function JobDetails() {
         )}
 
         {job.application_deadline && (
-          <p className="mt-6 text-xs text-slate-400">
+          <p className="mt-6 text-xs text-ink-500">
             Applications close {new Date(job.application_deadline).toLocaleDateString()}.
           </p>
         )}
@@ -252,7 +256,7 @@ export default function JobDetails() {
 
 function Shell({ children }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-canvas">
       <Navbar />
       <main className="max-w-3xl mx-auto px-6 py-8">{children}</main>
     </div>
@@ -262,17 +266,13 @@ function Shell({ children }) {
 function Section({ title, text }) {
   if (!text) return null;
   return (
-    <div className="mt-6">
-      <h2 className="text-sm font-semibold text-slate-900 mb-1.5">{title}</h2>
-      <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed">{text}</p>
+    <div className="mt-6 pt-6 border-t border-violet-50">
+      <h2 className="font-display text-sm font-bold text-ink-950 mb-1.5">{title}</h2>
+      <p className="text-sm text-ink-700 whitespace-pre-line leading-relaxed">{text}</p>
     </div>
   );
 }
 
 function Tag({ children }) {
-  return (
-    <span className="text-xs font-medium text-slate-600 bg-slate-100 rounded-full px-2.5 py-1">
-      {children}
-    </span>
-  );
+  return <span className="badge badge-neutral">{children}</span>;
 }

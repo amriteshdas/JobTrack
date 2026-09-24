@@ -75,33 +75,33 @@ export default function ApplyModal({ jobId, onClose, onApplied }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-20">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h2 className="text-lg font-semibold text-slate-900">Apply for this role</h2>
+    <div className="fixed inset-0 bg-ink-950/40 backdrop-blur-sm flex items-center justify-center p-4 z-30 animate-fade-in">
+      <div className="card p-6 max-w-md w-full animate-pop shadow-lift">
+        <h2 className="font-display text-lg font-bold text-ink-950">Apply for this role</h2>
 
         <form onSubmit={submit} className="mt-4 space-y-4">
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 animate-pop">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Resume</label>
+            <label className="field-label">Resume</label>
 
             {defaultResumeUrl === undefined && (
-              <p className="text-sm text-slate-400">Checking your profile…</p>
+              <p className="text-sm text-ink-500">Checking your profile…</p>
             )}
 
             {defaultResumeUrl !== undefined && hasDefault && useDefault && (
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <span className="text-sm text-slate-700 truncate">
-                  Using your uploaded resume: <strong>{filenameFromUrl(defaultResumeUrl)}</strong>
+              <div className="flex items-center justify-between rounded-lg border border-violet-100 bg-violet-50/60 px-3 py-2">
+                <span className="text-sm text-ink-700 truncate">
+                  Using your uploaded resume: <strong className="text-ink-950">{filenameFromUrl(defaultResumeUrl)}</strong>
                 </span>
                 <button
                   type="button"
                   onClick={() => setUseDefault(false)}
-                  className="shrink-0 text-sm text-slate-500 hover:text-slate-900 hover:underline ml-2"
+                  className="shrink-0 text-sm font-medium text-violet-600 hover:text-violet-800 ml-2"
                 >
                   Change
                 </button>
@@ -114,7 +114,7 @@ export default function ApplyModal({ jobId, onClose, onApplied }) {
                   type="file"
                   accept=".pdf,.doc,.docx"
                   onChange={(e) => setOverrideFile(e.target.files[0] || null)}
-                  className="text-sm"
+                  className="text-sm text-ink-700 file:mr-3 file:rounded-lg file:border-0 file:bg-violet-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-violet-700 hover:file:bg-violet-100"
                 />
                 {hasDefault && (
                   <button
@@ -123,13 +123,13 @@ export default function ApplyModal({ jobId, onClose, onApplied }) {
                       setUseDefault(true);
                       setOverrideFile(null);
                     }}
-                    className="block mt-1 text-sm text-slate-500 hover:text-slate-900 hover:underline"
+                    className="block mt-2 text-sm font-medium text-violet-600 hover:text-violet-800"
                   >
                     Use my uploaded resume instead
                   </button>
                 )}
                 {!hasDefault && (
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1.5 text-xs text-ink-500">
                     Tip: add a resume to your profile once and it'll be used by default on future
                     applications.
                   </p>
@@ -139,30 +139,24 @@ export default function ApplyModal({ jobId, onClose, onApplied }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Cover letter (optional)
-            </label>
+            <label className="field-label">Cover letter (optional)</label>
             <textarea
               value={coverLetter}
               onChange={(e) => setCoverLetter(e.target.value)}
               rows={5}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-slate-400"
+              className="input resize-none"
               placeholder="Why are you a good fit for this role?"
             />
           </div>
 
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-            >
+          <div className="flex gap-2 justify-end pt-1">
+            <button type="button" onClick={onClose} className="btn btn-secondary">
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting || defaultResumeUrl === undefined}
-              className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+              className="btn btn-primary"
             >
               {submitting ? "Submitting…" : "Submit application"}
             </button>

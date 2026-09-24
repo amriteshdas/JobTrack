@@ -5,9 +5,9 @@ import JobForm from "../../components/JobForm";
 import { jobsService, companiesService } from "../../services/jobs";
 
 const STATUS_STYLES = {
-  draft: "bg-slate-100 text-slate-600",
-  published: "bg-emerald-50 text-emerald-700",
-  closed: "bg-red-50 text-red-700",
+  draft: "badge-neutral",
+  published: "badge-green",
+  closed: "badge-red",
 };
 
 export default function EditJob() {
@@ -67,10 +67,12 @@ export default function EditJob() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-canvas">
         <Navbar />
         <main className="max-w-2xl mx-auto px-6 py-8">
-          <p className="text-sm text-red-600">{error}</p>
+          <div className="card px-6 py-8">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
         </main>
       </div>
     );
@@ -78,42 +80,43 @@ export default function EditJob() {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-canvas">
         <Navbar />
         <main className="max-w-2xl mx-auto px-6 py-8">
-          <p className="text-sm text-slate-400">Loading…</p>
+          <div className="card p-6">
+            <div className="skeleton h-5 w-1/3 mb-3" />
+            <div className="skeleton h-4 w-2/3" />
+          </div>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-canvas">
       <Navbar />
       <main className="max-w-2xl mx-auto px-6 py-8">
-        <Link to="/employer" className="text-sm text-slate-500 hover:underline">
+        <Link to="/employer" className="text-sm font-medium text-ink-500 hover:text-violet-700 transition-colors">
           &larr; Back to dashboard
         </Link>
 
         <div className="flex items-center justify-between mt-2 mb-6">
-          <h1 className="text-xl font-semibold text-slate-900">Edit job</h1>
-          <span className={`text-xs font-medium rounded-full px-2.5 py-1 ${STATUS_STYLES[job.status]}`}>
-            {job.status}
-          </span>
+          <h1 className="font-display text-xl font-extrabold text-ink-950">Edit job</h1>
+          <span className={`badge ${STATUS_STYLES[job.status]}`}>{job.status}</span>
         </div>
 
         {actionError && (
-          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+          <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 animate-pop">
             {actionError}
           </div>
         )}
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-4 flex flex-wrap gap-2">
+        <div className="card p-6 mb-4 flex flex-wrap items-center gap-2 animate-fade-up">
           {job.status !== "published" && (
             <button
               disabled={actionPending}
               onClick={() => runAction(() => jobsService.publish(id))}
-              className="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
+              className="btn btn-primary"
             >
               Publish
             </button>
@@ -122,7 +125,7 @@ export default function EditJob() {
             <button
               disabled={actionPending}
               onClick={() => runAction(() => jobsService.unpublish(id))}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className="btn btn-secondary"
             >
               Unpublish (back to draft)
             </button>
@@ -131,27 +134,24 @@ export default function EditJob() {
             <button
               disabled={actionPending}
               onClick={() => runAction(() => jobsService.close(id))}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className="btn btn-secondary"
             >
               Close job
             </button>
           )}
-          <Link
-            to={`/employer/jobs/${id}/applicants`}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
+          <Link to={`/employer/jobs/${id}/applicants`} className="btn btn-secondary">
             View applicants
           </Link>
           <button
             disabled={actionPending}
             onClick={handleDelete}
-            className="ml-auto text-sm text-slate-400 hover:text-red-600 disabled:opacity-50"
+            className="ml-auto text-sm font-medium text-ink-500 hover:text-red-600 disabled:opacity-50 transition-colors"
           >
             Delete job
           </button>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-6">
+        <div className="card p-6 animate-fade-up">
           <JobForm
             companies={companies}
             initial={{

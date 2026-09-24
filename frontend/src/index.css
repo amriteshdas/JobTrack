@@ -1,1 +1,226 @@
 @import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   JobTrack design tokens
+   Primary: violet (matches the existing mark), Secondary: sky
+   Headings: Manrope · Body: Inter
+--------------------------------------------------------------- */
+@theme {
+  --font-display: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink-950: #14101c;
+  --color-ink-900: #1c1730;
+  --color-ink-700: #423a5c;
+  --color-ink-500: #6b6285;
+
+  --color-violet-50: #f6f4ff;
+  --color-violet-100: #ede6ff;
+  --color-violet-200: #dcd0ff;
+  --color-violet-300: #c1a8ff;
+  --color-violet-400: #a274ff;
+  --color-violet-500: #8b4dff;
+  --color-violet-600: #7c3aed;
+  --color-violet-700: #6b28d9;
+  --color-violet-800: #5720b0;
+  --color-violet-900: #3f1a80;
+
+  --color-sky-400: #47bfff;
+  --color-sky-500: #1aa6ef;
+  --color-sky-600: #0d87c9;
+
+  --color-amber-400: #ffb84d;
+  --color-amber-500: #f59e0b;
+
+  --color-canvas: #faf9ff;
+  --color-surface: #ffffff;
+
+  --shadow-soft: 0 1px 2px rgba(20, 16, 28, 0.04), 0 8px 24px -12px rgba(124, 58, 237, 0.18);
+  --shadow-lift: 0 4px 10px rgba(20, 16, 28, 0.04), 0 20px 40px -16px rgba(124, 58, 237, 0.28);
+
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fade-in 0.4s ease both;
+  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.96) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    color: var(--color-ink-950);
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: var(--color-violet-200);
+    color: var(--color-ink-950);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-violet-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-violet-200);
+    border-radius: 999px;
+    border: 2px solid var(--color-canvas);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-violet-300); }
+}
+
+@layer components {
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: 0.75rem;
+    padding: 0.6rem 1.1rem;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--color-violet-600), var(--color-violet-700));
+    color: white;
+    box-shadow: var(--shadow-soft);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-ink-900);
+    border: 1px solid #e4dfef;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--color-violet-300);
+    background: var(--color-violet-50);
+  }
+
+  .btn-ghost {
+    color: var(--color-ink-700);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    color: var(--color-violet-700);
+    background: var(--color-violet-50);
+  }
+
+  .btn-danger {
+    background: #fff1f1;
+    color: #c0293c;
+    border: 1px solid #fbd0d6;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: #ffe4e6;
+  }
+
+  /* Surfaces */
+  .card {
+    background: var(--color-surface);
+    border: 1px solid #ece7f7;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-soft);
+  }
+  .card-hover {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
+    border-color: var(--color-violet-200);
+  }
+
+  /* Form fields */
+  .field-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-ink-700);
+    margin-bottom: 0.375rem;
+  }
+  .input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid #e0dcee;
+    background: var(--color-surface);
+    padding: 0.6rem 0.85rem;
+    font-size: 0.875rem;
+    color: var(--color-ink-900);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input::placeholder { color: #a79fbd; }
+  .input:hover { border-color: #cec5e6; }
+  .input:focus {
+    outline: none;
+    border-color: var(--color-violet-500);
+    box-shadow: 0 0 0 3px var(--color-violet-100);
+  }
+  .input:disabled { background: #f6f4fb; color: #a79fbd; }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
+    background: var(--color-violet-50);
+    color: var(--color-violet-700);
+    border: 1px solid var(--color-violet-100);
+  }
+  .badge-sky { background: #eaf8ff; color: var(--color-sky-600); border-color: #cdedff; }
+  .badge-amber { background: #fff6e6; color: #b06b02; border-color: #ffe4b0; }
+  .badge-neutral { background: #f4f2fa; color: var(--color-ink-700); border-color: #e7e2f2; }
+  .badge-green { background: #eafbf1; color: #12805a; border-color: #c8f0da; }
+  .badge-red { background: #fff1f1; color: #c0293c; border-color: #fbd0d6; }
+
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, #efecf9 25%, #f7f5fc 37%, #efecf9 63%);
+    background-size: 400% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 0.5rem;
+  }
+
+  /* Reveal list items with a single, gentle stagger */
+  .reveal {
+    animation: var(--animate-fade-up);
+    animation-delay: calc(var(--reveal-index, 0) * 60ms);
+  }
+}

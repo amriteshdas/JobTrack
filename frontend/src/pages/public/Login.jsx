@@ -38,65 +38,51 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-slate-900 text-center">
-          JobTrack
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 text-center">
-          Sign in to your account
-        </p>
+    <div className="min-h-screen bg-canvas flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-violet-200/40 blur-3xl" />
+      <div className="absolute -right-32 -bottom-32 h-80 w-80 rounded-full bg-sky-200/40 blur-3xl" />
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4"
-        >
+      <div className="w-full max-w-sm relative animate-fade-up">
+        <Link to="/" className="flex items-center justify-center gap-2 mb-1">
+          <span className="grid place-items-center h-9 w-9 rounded-lg bg-gradient-to-br from-violet-500 to-violet-700 text-white font-display font-bold text-sm shadow-soft">
+            JT
+          </span>
+          <span className="font-display font-extrabold text-xl text-ink-950">JobTrack</span>
+        </Link>
+        <p className="mt-2 text-sm text-ink-500 text-center">Sign in to your account</p>
+
+        <form onSubmit={handleSubmit} className="mt-6 card p-6 space-y-4">
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700 animate-pop">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              required
-              value={form.email}
-              onChange={update}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
-            />
+            <label className="field-label">Email</label>
+            <input type="email" name="email" required value={form.email} onChange={update} className="input" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Password
-            </label>
+            <label className="field-label">Password</label>
             <input
               type="password"
               name="password"
               required
               value={form.password}
               onChange={update}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400"
+              className="input"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-slate-900 text-white text-sm font-medium py-2.5 hover:bg-slate-800 disabled:opacity-50 transition"
-          >
+          <button type="submit" disabled={submitting} className="btn btn-primary w-full">
             {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
+        <p className="mt-4 text-center text-sm text-ink-500">
           No account?{" "}
-          <Link to="/register" className="text-slate-900 font-medium hover:underline">
+          <Link to="/register" className="text-violet-700 font-semibold hover:text-violet-800">
             Create one
           </Link>
         </p>

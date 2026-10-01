@@ -751,7 +751,7 @@ Interested in:
 [https://amriteshdas.netlify.app/](https://amriteshdas.netlify.app/)
 
 🔗 **LinkedIn:**
-[https://www.linkedin.com/](https://www.linkedin.com/amriteshdas)
+[https://www.linkedin.com/amriteshdas](https://www.linkedin.com/amriteshdas)
 
 ---
 
